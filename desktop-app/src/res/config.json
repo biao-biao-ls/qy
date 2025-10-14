@@ -1,0 +1,8 @@
+{
+    "version": "1.0.13",
+    "env": "UAT",
+    "gpu": true,
+    "hard": true,
+    "singleLock": true,
+    "ChromiumLog": false
+}
