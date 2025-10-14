@@ -5,6 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
+    define: {
+      'process.env.ENV_NAME': JSON.stringify(process.env.ENV_NAME),
+      'process.env.LOGIN_URL': JSON.stringify(process.env.LOGIN_URL),
+    },
     build: {
       rollupOptions: {
         external: ['fsevents', 'osx-temperature-sensor', 'utf-8-validate', 'bufferutil', 'ws'],
@@ -21,6 +25,7 @@ export default defineConfig({
           frame: resolve(__dirname, 'src/preload/frame.ts'),
           view: resolve(__dirname, 'src/preload/view.ts'),
         },
+        external: ['fsevents', 'osx-temperature-sensor', 'utf-8-validate', 'bufferutil', 'ws'],
       },
     },
   },
@@ -48,5 +53,18 @@ export default defineConfig({
         },
       },
     },
+    css: {
+      devSourcemap: true,
+    },
+    assetsInclude: [
+      '**/*.ico',
+      '**/*.png',
+      '**/*.jpg',
+      '**/*.jpeg',
+      '**/*.svg',
+      '**/*.eot',
+      '**/*.woff',
+      '**/*.woff2',
+    ],
   },
 })

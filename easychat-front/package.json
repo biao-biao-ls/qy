@@ -1,10 +1,10 @@
 {
-  "name": "easychat-front",
-  "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "name": "JLCONE",
+  "version": "1.0.13",
+  "description": "JLCONE - Modern Electron Desktop Application",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "Jialichuang(Hong Kong) co., Limited",
+  "homepage": "https://www.jlcpcb.com",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
@@ -17,36 +17,43 @@
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
-    "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:linux": "npm run build && electron-builder --linux",
+    "package:win32": "npm run build && electron-builder --win --ia32",
+    "package:win64": "npm run build && electron-builder --win --x64",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:mac-arm64": "npm run build && electron-builder --mac --arm64",
+    "package:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
-    "crypto-js": "^4.1.1",
-    "electron-store": "^8.0.1",
+    "crypto-js": "^4.2.0",
+    "electron-store": "^10.0.0",
     "electron-updater": "^6.3.9",
-    "getmac": "^5.20.0",
-    "log4js": "^6.3.0",
+    "getmac": "^6.6.0",
+    "log4js": "^6.9.1",
     "os-utils": "0.0.14",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "systeminformation": "^5.11.6",
-    "uuid": "^8.3.2",
-    "ws": "^8.18.3"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "systeminformation": "^5.23.5",
+    "uuid": "^10.0.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.0.0",
-    "@electron-toolkit/tsconfig": "^1.0.1",
-    "@types/crypto-js": "^4.1.1",
-    "@types/node": "^22.14.1",
-    "@types/react": "^19.1.1",
-    "@types/react-dom": "^19.1.2",
-    "@types/uuid": "^8.3.4",
-    "@types/ws": "^8.18.1",
+    "@electron-toolkit/tsconfig": "^2.0.0",
+    "@types/crypto-js": "^4.2.2",
+    "@types/electron": "^1.4.38",
+    "@types/node": "^22.18.10",
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.4",
-    "electron": "^35.1.5",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.1",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.1.0",
     "eslint": "^9.24.0",
@@ -54,7 +61,90 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "prettier": "^3.5.3",
+    "rimraf": "^6.0.1",
     "typescript": "^5.8.3",
     "vite": "^6.2.6"
+  },
+  "build": {
+    "productName": "JLCONE",
+    "appId": "com.jlcpcb.www",
+    "copyright": "Jialichuang(Hong Kong) co., Limited",
+    "directories": {
+      "output": "dist",
+      "buildResources": "resources"
+    },
+    "files": [
+      "out/**/*",
+      "resources/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "resources",
+        "to": "resources"
+      }
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "resources/icon.png",
+      "uninstallerIcon": "resources/icon.png",
+      "installerHeaderIcon": "resources/icon.png",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "JLCONE"
+    },
+    "win": {
+      "icon": "resources/icon.png",
+      "target": "nsis"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 150,
+          "type": "file"
+        }
+      ]
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.png"
+    },
+    "linux": {
+      "target": "zip",
+      "icon": "resources/icon.png"
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://test-static.jlcpcb.com/app_version/package/windows",
+        "useMultipleRangeRequest": false
+      },
+      {
+        "provider": "generic",
+        "url": "https://test-static.jlcpcb.com/app_version/package/mac/intel",
+        "useMultipleRangeRequest": false
+      },
+      {
+        "provider": "generic",
+        "url": "https://test-static.jlcpcb.com/app_version/package/mac/arm",
+        "useMultipleRangeRequest": false
+      }
+    ]
   }
 }

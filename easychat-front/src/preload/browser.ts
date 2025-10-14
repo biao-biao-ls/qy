@@ -51,6 +51,6 @@ if (process.contextIsolated) {
     console.error('Failed to expose browser API:', error)
   }
 } else {
-  // @ts-ignore
+  // @ts-ignore: browserAPI is defined in the preload context
   window.browserAPI = browserAPI
 }

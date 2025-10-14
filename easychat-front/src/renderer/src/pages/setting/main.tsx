@@ -12,5 +12,5 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <SettingPage />
-  </StrictMode>,
+  </StrictMode>
 )

@@ -54,6 +54,6 @@ if (process.contextIsolated) {
     console.error('Failed to expose frame API:', error)
   }
 } else {
-  // @ts-ignore
+  // @ts-ignore: frameAPI is defined in the preload context
   window.frameAPI = frameAPI
 }

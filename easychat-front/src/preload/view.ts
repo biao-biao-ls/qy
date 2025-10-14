@@ -65,6 +65,6 @@ if (process.contextIsolated) {
     console.error('Failed to expose view API:', error)
   }
 } else {
-  // @ts-ignore
+  // @ts-ignore: viewAPI is defined in the preload context
   window.viewAPI = viewAPI
 }

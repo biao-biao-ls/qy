@@ -7,14 +7,14 @@
   - 设置 TypeScript 严格模式和现代化的 ESLint/Prettier 配置
   - _需求: 1.1, 3.1, 3.2, 6.3, 6.4_
 
-- [ ] 2. 依赖管理和包配置迁移
-  - [ ] 2.1 分析和清理依赖列表
+- [x] 2. 依赖管理和包配置迁移
+  - [x] 2.1 分析和清理依赖列表
     - 审查 desktop-app 的 package.json，识别必要和冗余的依赖
     - 升级核心依赖到最新稳定版本（Electron, React, TypeScript）
     - 移除不再需要的 Webpack 相关依赖，添加 Vite 相关依赖
     - _需求: 3.1, 3.2_
 
-  - [ ] 2.2 配置文件现代化
+  - [x] 2.2 配置文件现代化
     - 迁移 tsconfig.json 配置，启用严格模式和现代 TypeScript 特性
     - 配置 electron-vite.config.ts 替代 webpack.config.ts
     - 设置 electron-builder 配置，保持原有的打包功能
