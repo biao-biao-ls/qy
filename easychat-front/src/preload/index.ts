@@ -74,6 +74,40 @@ const api = {
     closeDevTools: () => ipcRenderer.invoke('dev:closeDevTools'),
     isDevToolsOpened: () => ipcRenderer.invoke('dev:isDevToolsOpened')
   },
+  update: {
+    check: () => ipcRenderer.invoke('update:check'),
+    download: () => ipcRenderer.invoke('update:download'),
+    install: () => ipcRenderer.invoke('update:install'),
+    getVersion: () => ipcRenderer.invoke('update:get-version'),
+    checkCustom: () => ipcRenderer.invoke('update:check-custom'),
+    onChecking: (callback: () => void) => {
+      ipcRenderer.on('update:checking', callback)
+      return () => ipcRenderer.removeAllListeners('update:checking')
+    },
+    onAvailable: (callback: (info: any) => void) => {
+      ipcRenderer.on('update:available', (_, info) => callback(info))
+      return () => ipcRenderer.removeAllListeners('update:available')
+    },
+    onNotAvailable: (callback: () => void) => {
+      ipcRenderer.on('update:not-available', callback)
+      return () => ipcRenderer.removeAllListeners('update:not-available')
+    },
+    onError: (callback: (error: string) => void) => {
+      ipcRenderer.on('update:error', (_, error) => callback(error))
+      return () => ipcRenderer.removeAllListeners('update:error')
+    },
+    onDownloadProgress: (callback: (progress: any) => void) => {
+      ipcRenderer.on('update:download-progress', (_, progress) => callback(progress))
+      return () => ipcRenderer.removeAllListeners('update:download-progress')
+    },
+    onDownloaded: (callback: () => void) => {
+      ipcRenderer.on('update:downloaded', callback)
+      return () => ipcRenderer.removeAllListeners('update:downloaded')
+    }
+  },
+  shell: {
+    openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url)
+  },
   ipc: {
     send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, ...args),
     invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),

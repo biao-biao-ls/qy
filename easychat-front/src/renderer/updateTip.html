@@ -1,12 +1,225 @@
-<!doctype html>
-<html lang="zh-CN">
+<!DOCTYPE html>
+<html>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JLCONE - 更新提示</title>
+    <title>更新提示</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background: #ffffff;
+        color: #333333;
+        overflow: hidden;
+        user-select: none;
+      }
+
+      .update-container {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .update-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .update-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+      }
+
+      .close-btn:hover {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .update-content {
+        flex: 1;
+        padding: 24px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .update-icon {
+        text-align: center;
+        margin-bottom: 16px;
+      }
+
+      .update-icon svg {
+        width: 48px;
+        height: 48px;
+        color: #667eea;
+      }
+
+      .update-message {
+        text-align: center;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        white-space: pre-line;
+      }
+
+      .update-version {
+        text-align: center;
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 20px;
+      }
+
+      .progress-container {
+        margin: 16px 0;
+        display: none;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #f0f0f0;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+        width: 0%;
+      }
+
+      .progress-text {
+        text-align: center;
+        font-size: 12px;
+        color: #666;
+        margin-top: 8px;
+      }
+
+      .update-actions {
+        padding: 16px 20px;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 80px;
+      }
+
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #5a6fd8;
+      }
+
+      .btn-secondary {
+        background: #f5f5f5;
+        color: #666;
+        border: 1px solid #ddd;
+      }
+
+      .btn-secondary:hover {
+        background: #e8e8e8;
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .force-update .btn-secondary {
+        display: none;
+      }
+
+      .loading {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 8px;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div class="update-container" id="updateContainer">
+      <div class="update-header">
+        <h3 class="update-title" id="updateTitle">更新提示</h3>
+        <button class="close-btn" id="closeBtn" title="关闭">×</button>
+      </div>
+
+      <div class="update-content">
+        <div class="update-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+        </div>
+
+        <div class="update-message" id="updateMessage">
+          正在检查更新...
+        </div>
+
+        <div class="update-version" id="updateVersion"></div>
+
+        <div class="progress-container" id="progressContainer">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text" id="progressText">0%</div>
+        </div>
+      </div>
+
+      <div class="update-actions">
+        <button class="btn btn-secondary" id="cancelBtn">取消</button>
+        <button class="btn btn-primary" id="confirmBtn">确定</button>
+      </div>
+    </div>
+
     <script type="module" src="./src/pages/updateTip/main.tsx"></script>
   </body>
 </html>

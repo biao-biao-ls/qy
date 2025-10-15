@@ -1,15 +1,10 @@
-import '../../assets/main.css'
-
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import UpdateTipPage from './UpdateTipPage'
 
-const rootElement = document.getElementById('root')
-if (!rootElement) {
-  throw new Error('Root element not found')
-}
-
-createRoot(rootElement).render(
+// 直接渲染到 body，因为 HTML 中没有 root 元素
+const container = document.body
+createRoot(container).render(
   <StrictMode>
     <UpdateTipPage />
   </StrictMode>

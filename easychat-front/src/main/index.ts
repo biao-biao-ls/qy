@@ -11,6 +11,7 @@ import { autoUpdater } from 'electron-updater'
 // 导入自定义模块
 import { WindowManager } from './managers/WindowManager'
 import { PushManager } from './managers/PushManager'
+import { UpdateManager } from './managers/UpdateManager'
 import { AppConfig } from './config/AppConfig'
 import { initLogger, mainLogger, errorLogger } from '../utils/logger'
 import { APP_NAME, APP_VERSION } from '../utils/constants'
@@ -25,12 +26,14 @@ import icon from '../../resources/icon.png?asset'
 class Application {
   private windowManager: WindowManager
   private pushManager: PushManager
+  private updateManager: UpdateManager
   private appConfig: AppConfig
   private appState: AppState = AppState.INITIALIZING
   private isInitialized = false
 
   constructor() {
     this.windowManager = WindowManager.getInstance()
+    this.updateManager = UpdateManager.getInstance()
     this.appConfig = AppConfig.getInstance()
     
     // 初始化推送管理器
@@ -101,6 +104,7 @@ class Application {
       mainLogger.info('应用程序初始化完成')
     } catch (error) {
       this.handleInitializationError(error as Error)
+      throw error // 重新抛出错误，确保调用者知道初始化失败
     }
   }
 
@@ -237,29 +241,29 @@ class Application {
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)
       
-      // 在开发环境中设置开发者工具快捷键
-      if (is.dev) {
-        // 注册 F12 快捷键打开开发者工具
-        window.webContents.on('before-input-event', (event, input) => {
-          if (input.key === 'F12') {
-            if (window.webContents.isDevToolsOpened()) {
-              window.webContents.closeDevTools()
-            } else {
-              window.webContents.openDevTools()
-            }
+      // 设置开发者工具快捷键（在所有环境中都可用）
+      // 注册 F12 快捷键打开开发者工具
+      window.webContents.on('before-input-event', (event, input) => {
+        if (input.key === 'F12') {
+          event.preventDefault()
+          if (window.webContents.isDevToolsOpened()) {
+            window.webContents.closeDevTools()
+          } else {
+            window.webContents.openDevTools({ mode: 'detach' })
           }
-          // Ctrl+Shift+I (Windows/Linux) 或 Cmd+Option+I (macOS)
-          if ((input.control || input.meta) && input.shift && input.key === 'I') {
-            if (window.webContents.isDevToolsOpened()) {
-              window.webContents.closeDevTools()
-            } else {
-              window.webContents.openDevTools()
-            }
+        }
+        // Ctrl+Shift+I (Windows/Linux) 或 Cmd+Option+I (macOS)
+        if ((input.control || input.meta) && input.shift && input.key === 'I') {
+          event.preventDefault()
+          if (window.webContents.isDevToolsOpened()) {
+            window.webContents.closeDevTools()
+          } else {
+            window.webContents.openDevTools({ mode: 'detach' })
           }
-        })
-        
-        mainLogger.info('开发者工具快捷键已注册 (F12, Ctrl+Shift+I)')
-      }
+        }
+      })
+      
+      mainLogger.info('开发者工具快捷键已注册 (F12, Ctrl+Shift+I)')
     })
 
     // Web 内容创建事件
@@ -369,6 +373,9 @@ class Application {
 
     // 推送服务 IPC 处理器
     this.setupPushIpcHandlers()
+
+    // 更新服务 IPC 处理器
+    this.setupUpdateIpcHandlers()
 
     mainLogger.info('全局 IPC 处理器设置完成')
   }
@@ -595,14 +602,14 @@ class Application {
         webContents.closeDevTools()
         return { success: true, action: 'closed' }
       } else {
-        webContents.openDevTools()
+        webContents.openDevTools({ mode: 'detach' })
         return { success: true, action: 'opened' }
       }
     })
 
     ipcMain.handle('dev:openDevTools', (event) => {
       const webContents = event.sender
-      webContents.openDevTools()
+      webContents.openDevTools({ mode: 'detach' })
       return { success: true }
     })
 
@@ -621,6 +628,149 @@ class Application {
   }
 
   /**
+   * 设置更新服务 IPC 处理器
+   */
+  private setupUpdateIpcHandlers(): void {
+    // 检查更新
+    ipcMain.handle('update:check', async () => {
+      try {
+        await this.updateManager.checkForUpdates(true)
+        return { success: true }
+      } catch (error) {
+        mainLogger.error('检查更新失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 下载更新
+    ipcMain.handle('update:download', async () => {
+      try {
+        await this.updateManager.startDownload()
+        return { success: true }
+      } catch (error) {
+        mainLogger.error('下载更新失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 安装更新
+    ipcMain.handle('update:install', () => {
+      try {
+        this.updateManager.installUpdate()
+        return { success: true }
+      } catch (error) {
+        mainLogger.error('安装更新失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 获取当前版本
+    ipcMain.handle('update:get-version', () => {
+      return this.updateManager.getCurrentVersion()
+    })
+
+    // 检查自定义更新
+    ipcMain.handle('update:check-custom', async () => {
+      try {
+        const updateService = (this.updateManager as any).updateService
+        const updateInfo = await updateService.checkCustomUpdate()
+        return { success: true, updateInfo }
+      } catch (error) {
+        mainLogger.error('检查自定义更新失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 更新窗口相关处理器
+    ipcMain.handle('update-window:get-options', () => {
+      // 这个会被 UpdateWindow 类重写
+      return {}
+    })
+
+    ipcMain.handle('update-window:confirm', () => {
+      // 这个会被 UpdateWindow 类重写
+      return true
+    })
+
+    ipcMain.handle('update-window:cancel', () => {
+      // 这个会被 UpdateWindow 类重写
+      return false
+    })
+
+    ipcMain.handle('update-window:close', () => {
+      // 这个会被 UpdateWindow 类重写
+      return true
+    })
+
+    // Shell 操作
+    ipcMain.handle('shell:open-external', async (_, url: string) => {
+      try {
+        await shell.openExternal(url)
+        return { success: true }
+      } catch (error) {
+        mainLogger.error('打开外部链接失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 应用退出
+    ipcMain.handle('app:quit', () => {
+      app.quit()
+      return { success: true }
+    })
+
+    // 获取更新日志
+    ipcMain.handle('update:get-logs', async (_, limit?: number) => {
+      try {
+        const updateService = (this.updateManager as any).updateService
+        const logs = await updateService.updateLogService.getLogs(limit)
+        return { success: true, logs }
+      } catch (error) {
+        mainLogger.error('获取更新日志失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 获取更新统计
+    ipcMain.handle('update:get-statistics', async () => {
+      try {
+        const updateService = (this.updateManager as any).updateService
+        const statistics = updateService.updateLogService.getStatistics()
+        return { success: true, statistics }
+      } catch (error) {
+        mainLogger.error('获取更新统计失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 获取可用备份
+    ipcMain.handle('update:get-backups', async () => {
+      try {
+        const updateService = (this.updateManager as any).updateService
+        const backups = updateService.rollbackService.getAvailableBackups()
+        return { success: true, backups }
+      } catch (error) {
+        mainLogger.error('获取备份列表失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 执行回滚
+    ipcMain.handle('update:rollback', async (_, options) => {
+      try {
+        const updateService = (this.updateManager as any).updateService
+        const result = await updateService.rollbackService.rollback(options)
+        return { success: true, result }
+      } catch (error) {
+        mainLogger.error('执行回滚失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    mainLogger.info('更新服务 IPC 处理器设置完成')
+  }
+
+  /**
    * 启动应用程序
    */
   async start(): Promise<void> {
@@ -632,7 +782,23 @@ class Application {
       this.appState = AppState.RUNNING
       
       // 创建主窗口
-      await this.windowManager.createMainWindow()
+      const mainWindow = await this.windowManager.createMainWindow()
+      
+      // 初始化更新管理器
+      try {
+        await this.updateManager.initialize()
+        
+        // 设置更新管理器的主窗口引用
+        this.updateManager.setMainWindow(mainWindow)
+        
+        // 启动自动更新检查
+        this.updateManager.startAutoCheck()
+        
+        mainLogger.info('更新管理器初始化完成')
+      } catch (error) {
+        mainLogger.error('更新管理器初始化失败，跳过更新功能', error)
+        // 更新功能初始化失败不应该阻止应用启动
+      }
       
       // 启动推送服务（可选，也可以由用户手动启动）
       try {
@@ -645,6 +811,7 @@ class Application {
       mainLogger.info('应用程序启动完成')
     } catch (error) {
       this.handleStartupError(error as Error)
+      throw error // 重新抛出错误，确保调用者知道启动失败
     }
   }
 
@@ -735,6 +902,14 @@ class Application {
       mainLogger.info('推送管理器已清理')
     } catch (error) {
       mainLogger.error('清理推送管理器失败', error)
+    }
+
+    // 清理更新管理器
+    try {
+      this.updateManager.cleanup()
+      mainLogger.info('更新管理器已清理')
+    } catch (error) {
+      mainLogger.error('清理更新管理器失败', error)
     }
     
     this.appState = AppState.CLOSED
