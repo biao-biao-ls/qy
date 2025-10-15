@@ -12,8 +12,12 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "start": "electron-vite preview",
-    "dev": "electron-vite dev",
-    "build": "npm run typecheck && electron-vite build",
+    "dev": "cross-env NODE_ENV=development electron-vite dev",
+    "build": "npm run typecheck && cross-env NODE_ENV=production electron-vite build",
+    "build:dev": "cross-env NODE_ENV=development electron-vite build",
+    "build:analyze": "npm run build && npx vite-bundle-analyzer out/renderer",
+    "clean": "rimraf out dist",
+    "prebuild": "npm run clean",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
@@ -21,9 +25,17 @@
     "build:linux": "npm run build && electron-builder --linux",
     "package:win32": "npm run build && electron-builder --win --ia32",
     "package:win64": "npm run build && electron-builder --win --x64",
+    "package:win": "npm run build && electron-builder --win",
     "package:mac": "npm run build && electron-builder --mac",
     "package:mac-arm64": "npm run build && electron-builder --mac --arm64",
-    "package:linux": "npm run build && electron-builder --linux"
+    "package:mac-intel": "npm run build && electron-builder --mac --x64",
+    "package:linux": "npm run build && electron-builder --linux",
+    "package:linux-appimage": "npm run build && electron-builder --linux --target AppImage",
+    "package:linux-deb": "npm run build && electron-builder --linux --target deb",
+    "package:linux-rpm": "npm run build && electron-builder --linux --target rpm",
+    "package:all": "npm run build && electron-builder --mac --win --linux",
+    "dist": "npm run package:all",
+    "dist:dir": "npm run build:unpack"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
@@ -44,6 +56,7 @@
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.0.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@electron/notarize": "^2.5.0",
     "@types/crypto-js": "^4.2.2",
     "@types/electron": "^1.4.38",
     "@types/node": "^22.18.10",
@@ -52,7 +65,10 @@
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "babel-plugin-transform-remove-console": "^6.9.4",
     "cross-env": "^7.0.3",
+    "cssnano": "^7.0.7",
     "electron": "^33.2.1",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.1.0",
@@ -60,8 +76,11 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
+    "postcss": "^8.5.1",
     "prettier": "^3.5.3",
     "rimraf": "^6.0.1",
+    "rollup-plugin-visualizer": "^5.12.0",
+    "terser": "^5.36.0",
     "typescript": "^5.8.3",
     "vite": "^6.2.6"
   },
@@ -75,28 +94,59 @@
     },
     "files": [
       "out/**/*",
-      "resources/**/*"
+      "resources/**/*",
+      "!out/renderer/assets/**/*.map",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
     ],
     "extraFiles": [
       {
         "from": "resources",
-        "to": "resources"
+        "to": "resources",
+        "filter": ["**/*", "!**/*.md"]
       }
     ],
+    "compression": "maximum",
+    "removePackageScripts": true,
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
     "nsis": {
       "oneClick": false,
       "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "resources/icon.png",
-      "uninstallerIcon": "resources/icon.png",
-      "installerHeaderIcon": "resources/icon.png",
+      "installerIcon": "resources/jlcAssistant256.ico",
+      "uninstallerIcon": "resources/jlcAssistant256.ico",
+      "installerHeaderIcon": "resources/jlcAssistant256.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "JLCONE"
+      "shortcutName": "JLCONE",
+      "include": "build/installer.nsh",
+      "warningsAsErrors": false,
+      "displayLanguageSelector": true,
+      "installerLanguages": ["en_US", "zh_CN"],
+      "language": "2052"
     },
     "win": {
-      "icon": "resources/icon.png",
-      "target": "nsis"
+      "icon": "resources/jlcAssistant256.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "publisherName": "Jialichuang(Hong Kong) co., Limited",
+      "verifyUpdateCodeSignature": false,
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "dmg": {
       "contents": [
@@ -111,40 +161,90 @@
           "y": 150,
           "type": "file"
         }
-      ]
+      ],
+      "title": "${productName} ${version}",
+      "icon": "resources/YourAppIcon.icns",
+      "iconSize": 80,
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "backgroundColor": "#ffffff"
     },
     "mac": {
       "target": [
         {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
           "target": "zip",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
+          "arch": ["x64", "arm64"]
         }
       ],
-      "icon": "resources/icon.png"
+      "icon": "resources/YourAppIcon.icns",
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "linux": {
-      "target": "zip",
-      "icon": "resources/icon.png"
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64"]
+        },
+        {
+          "target": "tar.gz",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "resources/jlcAssistant512.png",
+      "category": "Development",
+      "synopsis": "JLCONE - Modern Electron Desktop Application",
+      "description": "A modern desktop application built with Electron, React, and Vite",
+      "desktop": {
+        "Name": "JLCONE",
+        "Comment": "Modern Electron Desktop Application",
+        "Categories": "Development;Utility;"
+      },
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "publish": [
       {
         "provider": "generic",
         "url": "https://test-static.jlcpcb.com/app_version/package/windows",
-        "useMultipleRangeRequest": false
+        "useMultipleRangeRequest": false,
+        "channel": "latest"
       },
       {
         "provider": "generic",
         "url": "https://test-static.jlcpcb.com/app_version/package/mac/intel",
-        "useMultipleRangeRequest": false
+        "useMultipleRangeRequest": false,
+        "channel": "latest"
       },
       {
         "provider": "generic",
         "url": "https://test-static.jlcpcb.com/app_version/package/mac/arm",
-        "useMultipleRangeRequest": false
+        "useMultipleRangeRequest": false,
+        "channel": "latest"
       }
-    ]
+    ],
+    "electronDownload": {
+      "mirror": "https://npmmirror.com/mirrors/electron/"
+    },
+    "beforeBuild": "scripts/beforeBuild.js",
+    "afterSign": "scripts/notarize.js",
+    "afterPack": "scripts/afterPack.js"
   }
 }
