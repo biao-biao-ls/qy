@@ -308,7 +308,7 @@ export const TabRenderer: React.FC<TabRendererProps> = ({
           )}
         </div>
 
-        <style jsx>{`
+        <style jsx="true">{`
           .tab-renderer {
             display: flex;
             flex-direction: column;

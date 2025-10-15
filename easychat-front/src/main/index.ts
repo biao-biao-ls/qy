@@ -10,9 +10,10 @@ import { autoUpdater } from 'electron-updater'
 
 // 导入自定义模块
 import { WindowManager } from './managers/WindowManager'
+import { PushManager } from './managers/PushManager'
 import { AppConfig } from './config/AppConfig'
 import { initLogger, mainLogger, errorLogger } from '../utils/logger'
-import { APP_NAME, APP_VERSION, DEFAULT_WINDOW_CONFIG } from '../utils/constants'
+import { APP_NAME, APP_VERSION } from '../utils/constants'
 import { AppError, AppState } from '../types/app'
 import { WindowType } from '../types/window'
 import icon from '../../resources/icon.png?asset'
@@ -23,6 +24,7 @@ import icon from '../../resources/icon.png?asset'
  */
 class Application {
   private windowManager: WindowManager
+  private pushManager: PushManager
   private appConfig: AppConfig
   private appState: AppState = AppState.INITIALIZING
   private isInitialized = false
@@ -30,6 +32,27 @@ class Application {
   constructor() {
     this.windowManager = WindowManager.getInstance()
     this.appConfig = AppConfig.getInstance()
+    
+    // 初始化推送管理器
+    this.pushManager = new PushManager({
+      websocket: {
+        url: 'wss://your-websocket-server.com/ws', // 这里需要配置实际的 WebSocket 服务器地址
+        reconnectInterval: 5000,
+        maxReconnectAttempts: 5,
+        heartbeatInterval: 30000
+      },
+      notification: {
+        maxConcurrent: 3,
+        defaultTimeout: 5000,
+        soundEnabled: true
+      },
+      storage: {
+        maxMessages: 1000,
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7天
+      },
+      autoReconnect: true,
+      offlineMessageDelivery: true
+    })
   }
 
   /**
@@ -68,6 +91,9 @@ class Application {
       
       // 设置全局 IPC 处理器
       this.setupGlobalIpcHandlers()
+      
+      // 初始化推送管理器
+      await this.initializePushManager()
       
       this.appState = AppState.READY
       this.isInitialized = true
@@ -192,8 +218,14 @@ class Application {
       this.handleActivate()
     })
 
-    app.on('will-quit', () => {
-      this.handleWillQuit()
+    app.on('will-quit', (event) => {
+      event.preventDefault()
+      this.handleWillQuit().then(() => {
+        app.exit()
+      }).catch((error) => {
+        mainLogger.error('应用退出清理失败', error)
+        app.exit(1)
+      })
     })
 
     // 协议处理
@@ -204,6 +236,30 @@ class Application {
     // 浏览器窗口创建事件
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)
+      
+      // 在开发环境中设置开发者工具快捷键
+      if (is.dev) {
+        // 注册 F12 快捷键打开开发者工具
+        window.webContents.on('before-input-event', (event, input) => {
+          if (input.key === 'F12') {
+            if (window.webContents.isDevToolsOpened()) {
+              window.webContents.closeDevTools()
+            } else {
+              window.webContents.openDevTools()
+            }
+          }
+          // Ctrl+Shift+I (Windows/Linux) 或 Cmd+Option+I (macOS)
+          if ((input.control || input.meta) && input.shift && input.key === 'I') {
+            if (window.webContents.isDevToolsOpened()) {
+              window.webContents.closeDevTools()
+            } else {
+              window.webContents.openDevTools()
+            }
+          }
+        })
+        
+        mainLogger.info('开发者工具快捷键已注册 (F12, Ctrl+Shift+I)')
+      }
     })
 
     // Web 内容创建事件
@@ -311,6 +367,9 @@ class Application {
       return app.getVersion()
     })
 
+    // 推送服务 IPC 处理器
+    this.setupPushIpcHandlers()
+
     mainLogger.info('全局 IPC 处理器设置完成')
   }
 
@@ -385,6 +444,183 @@ class Application {
   }
 
   /**
+   * 初始化推送管理器
+   */
+  private async initializePushManager(): Promise<void> {
+    try {
+      mainLogger.info('初始化推送管理器')
+      
+      await this.pushManager.initialize()
+      
+      // 设置推送事件监听器
+      this.setupPushEventListeners()
+      
+      mainLogger.info('推送管理器初始化完成')
+    } catch (error) {
+      mainLogger.error('推送管理器初始化失败', error)
+      // 推送服务初始化失败不应该阻止应用启动
+    }
+  }
+
+  /**
+   * 设置推送事件监听器
+   */
+  private setupPushEventListeners(): void {
+    this.pushManager.on('connected', () => {
+      mainLogger.info('推送服务已连接')
+      this.broadcastToAllWindows('push:connected')
+    })
+
+    this.pushManager.on('disconnected', (data) => {
+      mainLogger.info('推送服务已断开', data)
+      this.broadcastToAllWindows('push:disconnected', data)
+    })
+
+    this.pushManager.on('connectionStateChanged', (state) => {
+      mainLogger.debug('推送连接状态变更', state)
+      this.broadcastToAllWindows('push:connection-state-changed', state)
+    })
+
+    this.pushManager.on('notificationShown', (data) => {
+      mainLogger.debug('通知已显示', data)
+      this.broadcastToAllWindows('push:notification-shown', data)
+    })
+
+    this.pushManager.on('notificationClicked', (data) => {
+      mainLogger.info('通知被点击', data)
+      this.broadcastToAllWindows('push:notification-clicked', data)
+    })
+
+    this.pushManager.on('error', (error) => {
+      mainLogger.error('推送服务错误', error)
+      this.broadcastToAllWindows('push:error', { message: error.message })
+    })
+  }
+
+  /**
+   * 向所有窗口广播消息
+   */
+  private broadcastToAllWindows(channel: string, data?: any): void {
+    const windows = BrowserWindow.getAllWindows()
+    windows.forEach(window => {
+      if (!window.isDestroyed()) {
+        window.webContents.send(channel, data)
+      }
+    })
+  }
+
+  /**
+   * 设置推送服务 IPC 处理器
+   */
+  private setupPushIpcHandlers(): void {
+    // 启动推送服务
+    ipcMain.handle('push:start', async () => {
+      try {
+        await this.pushManager.start()
+        return { success: true }
+      } catch (error) {
+        mainLogger.error('启动推送服务失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 停止推送服务
+    ipcMain.handle('push:stop', async () => {
+      try {
+        await this.pushManager.stop()
+        return { success: true }
+      } catch (error) {
+        mainLogger.error('停止推送服务失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 获取推送服务状态
+    ipcMain.handle('push:getStatus', () => {
+      return {
+        connectionState: this.pushManager.getConnectionState(),
+        statistics: this.pushManager.getStatistics()
+      }
+    })
+
+    // 设置用户ID
+    ipcMain.handle('push:setUserId', (_, userId: string) => {
+      this.pushManager.setUserId(userId)
+      return { success: true }
+    })
+
+    // 手动显示通知
+    ipcMain.handle('push:showNotification', async (_, message) => {
+      try {
+        await this.pushManager.showNotification(message)
+        return { success: true }
+      } catch (error) {
+        mainLogger.error('显示通知失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 获取最近消息
+    ipcMain.handle('push:getRecentMessages', async (_, limit?: number) => {
+      try {
+        const messages = await this.pushManager.getRecentMessages(limit)
+        return { success: true, messages }
+      } catch (error) {
+        mainLogger.error('获取最近消息失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 清除所有通知
+    ipcMain.handle('push:clearNotifications', () => {
+      this.pushManager.clearAllNotifications()
+      return { success: true }
+    })
+
+    // 清除所有消息
+    ipcMain.handle('push:clearMessages', async () => {
+      try {
+        await this.pushManager.clearAllMessages()
+        return { success: true }
+      } catch (error) {
+        mainLogger.error('清除消息失败', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // 开发者工具控制
+    ipcMain.handle('dev:toggleDevTools', (event) => {
+      const webContents = event.sender
+      if (webContents.isDevToolsOpened()) {
+        webContents.closeDevTools()
+        return { success: true, action: 'closed' }
+      } else {
+        webContents.openDevTools()
+        return { success: true, action: 'opened' }
+      }
+    })
+
+    ipcMain.handle('dev:openDevTools', (event) => {
+      const webContents = event.sender
+      webContents.openDevTools()
+      return { success: true }
+    })
+
+    ipcMain.handle('dev:closeDevTools', (event) => {
+      const webContents = event.sender
+      webContents.closeDevTools()
+      return { success: true }
+    })
+
+    ipcMain.handle('dev:isDevToolsOpened', (event) => {
+      const webContents = event.sender
+      return { isOpened: webContents.isDevToolsOpened() }
+    })
+
+    mainLogger.info('推送服务 IPC 处理器设置完成')
+  }
+
+  /**
    * 启动应用程序
    */
   async start(): Promise<void> {
@@ -397,6 +633,14 @@ class Application {
       
       // 创建主窗口
       await this.windowManager.createMainWindow()
+      
+      // 启动推送服务（可选，也可以由用户手动启动）
+      try {
+        await this.pushManager.start()
+        mainLogger.info('推送服务已启动')
+      } catch (error) {
+        mainLogger.warn('推送服务启动失败，将在后续重试', error)
+      }
       
       mainLogger.info('应用程序启动完成')
     } catch (error) {
@@ -482,8 +726,17 @@ class Application {
   /**
    * 处理应用即将退出事件
    */
-  private handleWillQuit(): void {
+  private async handleWillQuit(): Promise<void> {
     globalShortcut.unregisterAll()
+    
+    // 清理推送管理器
+    try {
+      await this.pushManager.destroy()
+      mainLogger.info('推送管理器已清理')
+    } catch (error) {
+      mainLogger.error('清理推送管理器失败', error)
+    }
+    
     this.appState = AppState.CLOSED
     mainLogger.info('应用程序即将退出')
   }

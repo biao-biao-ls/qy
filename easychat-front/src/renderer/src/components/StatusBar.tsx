@@ -223,7 +223,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         </div>
       )}
 
-      <style jsx>{`
+      <style jsx="true">{`
         .status-bar {
           display: flex;
           align-items: center;

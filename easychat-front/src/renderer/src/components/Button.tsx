@@ -82,7 +82,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
         <span className="btn__icon btn__icon--right">{icon}</span>
       )}
 
-      <style jsx>{`
+      <style jsx="true">{`
         .btn {
           display: inline-flex;
           align-items: center;

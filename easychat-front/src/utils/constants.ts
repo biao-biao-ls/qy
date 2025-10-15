@@ -17,6 +17,7 @@ export const DEFAULT_WINDOW_CONFIG = {
     nodeIntegration: false,
     contextIsolation: true,
     enableRemoteModule: false,
+    devTools: true, // 启用开发者工具
   },
 }
 

@@ -205,7 +205,7 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
         </div>
       )}
 
-      <style jsx>{`
+      <style jsx="true">{`
         .navigation-bar {
           display: flex;
           align-items: center;

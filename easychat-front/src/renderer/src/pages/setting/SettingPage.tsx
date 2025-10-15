@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { WindowControls } from '../../components/WindowControls'
 import { LoadingSpinner } from '../../components/LoadingSpinner'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { DevTools } from '../../components/DevTools'
 import { useWindowState, useDragRegion } from '../../hooks/useWindowState'
 import { useConfig, useUserPreferences } from '../../hooks/useConfig'
 import { useElectronAPI } from '../../hooks/useElectronAPI'
@@ -350,12 +351,7 @@ const SettingPage: React.FC = () => {
                 <h2>开发者选项</h2>
                 
                 <div className="setting-page__field">
-                  <button
-                    className="setting-page__button setting-page__button--secondary"
-                    onClick={() => electronAPI.ipc.send('open-dev-tools')}
-                  >
-                    打开开发者工具
-                  </button>
+                  <DevTools />
                 </div>
 
                 <div className="setting-page__field">
@@ -425,7 +421,7 @@ const SettingPage: React.FC = () => {
           </div>
         </div>
 
-        <style jsx>{`
+        <style jsx="true">{`
           .setting-page {
             display: flex;
             flex-direction: column;

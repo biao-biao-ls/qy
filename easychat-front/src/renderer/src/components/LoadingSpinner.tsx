@@ -33,7 +33,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
             <div className="loading-dots__dot" />
             <div className="loading-dots__dot" />
             <div className="loading-dots__dot" />
-            <style jsx>{`
+            <style jsx="true">{`
               .loading-dots {
                 display: flex;
                 gap: 4px;
@@ -73,7 +73,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       case 'pulse':
         return (
           <div className={`loading-pulse ${className}`}>
-            <style jsx>{`
+            <style jsx="true">{`
               .loading-pulse {
                 width: ${spinnerSize}px;
                 height: ${spinnerSize}px;
@@ -103,7 +103,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
             <div className="loading-bars__bar" />
             <div className="loading-bars__bar" />
             <div className="loading-bars__bar" />
-            <style jsx>{`
+            <style jsx="true">{`
               .loading-bars {
                 display: flex;
                 gap: 2px;
@@ -207,7 +207,7 @@ export const FullScreenLoading: React.FC<FullScreenLoadingProps> = ({
         )}
       </div>
       
-      <style jsx>{`
+      <style jsx="true">{`
         .fullscreen-loading {
           position: fixed;
           top: 0;
@@ -279,7 +279,7 @@ export const ButtonLoading: React.FC<ButtonLoadingProps> = ({
         {children}
       </span>
       
-      <style jsx>{`
+      <style jsx="true">{`
         .button-loading {
           position: relative;
           display: inline-flex;

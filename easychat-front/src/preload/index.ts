@@ -46,6 +46,34 @@ const api = {
     getVersion: () => ipcRenderer.invoke('app:getVersion'),
     getInfo: () => ipcRenderer.invoke('app:getInfo')
   },
+  push: {
+    start: () => ipcRenderer.invoke('push:start'),
+    stop: () => ipcRenderer.invoke('push:stop'),
+    getStatus: () => ipcRenderer.invoke('push:getStatus'),
+    setUserId: (userId: string) => ipcRenderer.invoke('push:setUserId', userId),
+    showNotification: (message: any) => ipcRenderer.invoke('push:showNotification', message),
+    getRecentMessages: (limit?: number) => ipcRenderer.invoke('push:getRecentMessages', limit),
+    clearNotifications: () => ipcRenderer.invoke('push:clearNotifications'),
+    clearMessages: () => ipcRenderer.invoke('push:clearMessages'),
+    onNotificationShown: (callback: (data: any) => void) => {
+      ipcRenderer.on('push:notification-shown', (_, data) => callback(data))
+      return () => ipcRenderer.removeAllListeners('push:notification-shown')
+    },
+    onNotificationClicked: (callback: (data: any) => void) => {
+      ipcRenderer.on('push:notification-clicked', (_, data) => callback(data))
+      return () => ipcRenderer.removeAllListeners('push:notification-clicked')
+    },
+    onConnectionStateChanged: (callback: (state: any) => void) => {
+      ipcRenderer.on('push:connection-state-changed', (_, state) => callback(state))
+      return () => ipcRenderer.removeAllListeners('push:connection-state-changed')
+    }
+  },
+  dev: {
+    toggleDevTools: () => ipcRenderer.invoke('dev:toggleDevTools'),
+    openDevTools: () => ipcRenderer.invoke('dev:openDevTools'),
+    closeDevTools: () => ipcRenderer.invoke('dev:closeDevTools'),
+    isDevToolsOpened: () => ipcRenderer.invoke('dev:isDevToolsOpened')
+  },
   ipc: {
     send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, ...args),
     invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),

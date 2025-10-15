@@ -147,6 +147,7 @@ export interface ElectronAPI {
     restore(): Promise<void>
     close(): Promise<void>
     setTitle(title: string): Promise<void>
+    isMaximized(): Promise<boolean>
     create(type: WindowType, options?: WindowOptions): Promise<string>
   }
 
@@ -155,6 +156,7 @@ export interface ElectronAPI {
     create(options: TabCreateOptions): Promise<TabItem>
     remove(tabId: string): Promise<void>
     activate(tabId: string): Promise<void>
+    switch(tabId: string): Promise<void>  // 兼容性别名
     update(tabId: string, options: TabUpdateOptions): Promise<TabItem>
     getAll(): Promise<TabItem[]>
     navigate(tabId: string, url: string): Promise<void>
@@ -199,5 +201,21 @@ export interface ElectronAPI {
     onProgress(callback: (progress: UpdateProgress) => void): () => void
     onAvailable(callback: (info: UpdateInfo) => void): () => void
     onDownloaded(callback: () => void): () => void
+  }
+
+  // 开发者工具
+  dev?: {
+    toggleDevTools(): Promise<{ success: boolean; action: 'opened' | 'closed' }>
+    openDevTools(): Promise<{ success: boolean }>
+    closeDevTools(): Promise<{ success: boolean }>
+    isDevToolsOpened(): Promise<{ isOpened: boolean }>
+  }
+
+  // IPC 通信（兼容性）
+  ipc?: {
+    send(channel: string, ...args: any[]): void
+    invoke(channel: string, ...args: any[]): Promise<any>
+    on(channel: string, callback: (...args: any[]) => void): () => void
+    removeAllListeners(channel: string): void
   }
 }

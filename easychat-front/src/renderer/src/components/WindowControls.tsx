@@ -108,7 +108,7 @@ export const WindowControls: React.FC<WindowControlsProps> = ({
           </button>
         )}
         
-        <style jsx>{`
+        <style jsx="true">{`
           .window-controls--darwin {
             display: flex;
             gap: 8px;
@@ -210,7 +210,7 @@ export const WindowControls: React.FC<WindowControlsProps> = ({
         </button>
       )}
       
-      <style jsx>{`
+      <style jsx="true">{`
         .window-controls--windows {
           display: flex;
           height: 32px;

@@ -180,7 +180,7 @@ const LauncherPage: React.FC = () => {
           </div>
         </div>
 
-        <style jsx>{`
+        <style jsx="true">{`
           .launcher-page {
             display: flex;
             flex-direction: column;

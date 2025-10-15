@@ -99,6 +99,25 @@ function App(): React.JSX.Element {
     electronAPI.ipc.send('window-open-settings')
   }, [electronAPI])
 
+  // 全局快捷键处理
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // F12 快捷键打开开发者工具
+      if (event.key === 'F12') {
+        event.preventDefault()
+        electronAPI.dev?.toggleDevTools?.()
+      }
+      // Ctrl+Shift+I (Windows/Linux) 或 Cmd+Option+I (macOS)
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'I') {
+        event.preventDefault()
+        electronAPI.dev?.toggleDevTools?.()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [electronAPI])
+
   // 键盘快捷键处理
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -268,7 +287,7 @@ function App(): React.JSX.Element {
           </div>
         )}
 
-        <style jsx>{`
+        <style jsx="true">{`
           .app {
             display: flex;
             flex-direction: column;

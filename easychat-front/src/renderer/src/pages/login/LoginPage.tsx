@@ -162,7 +162,7 @@ const LoginPage: React.FC = () => {
           </div>
         </div>
 
-        <style jsx>{`
+        <style jsx="true">{`
           .login-page {
             display: flex;
             flex-direction: column;

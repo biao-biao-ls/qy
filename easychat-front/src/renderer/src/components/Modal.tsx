@@ -132,7 +132,7 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
       </div>
 
-      <style jsx>{`
+      <style jsx="true">{`
         .modal-overlay {
           position: fixed;
           top: 0;
@@ -349,7 +349,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </Button>
         </div>
 
-        <style jsx>{`
+        <style jsx="true">{`
           .confirm-modal {
             text-align: center;
           }

@@ -81,7 +81,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
           </div>
           
-          <style jsx>{`
+          <style jsx="true">{`
             .error-boundary {
               display: flex;
               align-items: center;

@@ -132,7 +132,7 @@ const Versions: React.FC = () => {
         </div>
       )}
       
-      <style jsx>{`
+      <style jsx="true">{`
         .versions {
           background: rgba(0, 0, 0, 0.05);
           border-radius: 6px;
