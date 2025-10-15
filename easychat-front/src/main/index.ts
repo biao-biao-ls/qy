@@ -14,6 +14,7 @@ import { AppConfig } from './config/AppConfig'
 import { initLogger, mainLogger, errorLogger } from '../utils/logger'
 import { APP_NAME, APP_VERSION, DEFAULT_WINDOW_CONFIG } from '../utils/constants'
 import { AppError, AppState } from '../types/app'
+import { WindowType } from '../types/window'
 import icon from '../../resources/icon.png?asset'
 
 /**
@@ -64,6 +65,9 @@ class Application {
       
       // 设置自动更新
       this.setupAutoUpdater()
+      
+      // 设置全局 IPC 处理器
+      this.setupGlobalIpcHandlers()
       
       this.appState = AppState.READY
       this.isInitialized = true
@@ -222,6 +226,162 @@ class Application {
     autoUpdater.logger = mainLogger
     autoUpdater.checkForUpdatesAndNotify()
     mainLogger.info('自动更新系统已配置')
+  }
+
+  /**
+   * 设置全局 IPC 处理器
+   */
+  private setupGlobalIpcHandlers(): void {
+    mainLogger.info('开始设置全局 IPC 处理器')
+    
+    // 应用信息
+    ipcMain.handle('app:getVersion', () => {
+      mainLogger.debug('IPC: app:getVersion called')
+      return app.getVersion()
+    })
+
+    ipcMain.handle('app:getInfo', () => {
+      return {
+        name: app.getName(),
+        version: app.getVersion(),
+        platform: process.platform,
+        arch: process.arch
+      }
+    })
+
+    // 窗口状态
+    ipcMain.handle('window:isMaximized', () => {
+      mainLogger.debug('IPC: window:isMaximized called')
+      const mainWindow = this.windowManager.getWindowByType(WindowType.MAIN)
+      return mainWindow?.isMaximized() || false
+    })
+
+    ipcMain.handle('window:setTitle', (_, title: string) => {
+      const mainWindow = this.windowManager.getWindowByType(WindowType.MAIN)
+      if (mainWindow) {
+        mainWindow.setTitle(title)
+      }
+    })
+
+    // 用户信息
+    ipcMain.handle('get-user-info', () => {
+      return {
+        username: 'User', // 这里可以从配置中获取实际的用户信息
+        isLoggedIn: true
+      }
+    })
+
+    // 标签页管理（全局处理器，委托给主窗口）
+    ipcMain.handle('tab:create', async (event, options) => {
+      const mainWindow = this.windowManager.getWindowByType(WindowType.MAIN)
+      if (mainWindow) {
+        // 如果主窗口存在，委托给主窗口处理
+        return await this.handleTabCreate(options)
+      }
+      throw new Error('Main window not available')
+    })
+
+    ipcMain.handle('tab:close', async (event, tabId) => {
+      const mainWindow = this.windowManager.getWindowByType(WindowType.MAIN)
+      if (mainWindow) {
+        return await this.handleTabClose(tabId)
+      }
+      throw new Error('Main window not available')
+    })
+
+    ipcMain.handle('tab:switch', async (event, tabId) => {
+      const mainWindow = this.windowManager.getWindowByType(WindowType.MAIN)
+      if (mainWindow) {
+        return await this.handleTabSwitch(tabId)
+      }
+      throw new Error('Main window not available')
+    })
+
+    ipcMain.handle('tab:getAll', () => {
+      mainLogger.debug('IPC: tab:getAll called')
+      const mainWindow = this.windowManager.getWindowByType(WindowType.MAIN)
+      if (mainWindow) {
+        return this.handleTabGetAll()
+      }
+      return []
+    })
+
+    // 应用版本（兼容旧的调用方式）
+    ipcMain.handle('get-app-version', () => {
+      return app.getVersion()
+    })
+
+    mainLogger.info('全局 IPC 处理器设置完成')
+  }
+
+  /**
+   * 处理标签页创建（委托给主窗口）
+   */
+  private async handleTabCreate(options: any): Promise<any> {
+    const windowId = this.getMainWindowId()
+    if (windowId) {
+      const windowInstance = this.windowManager.getWindowInstance(windowId)
+      if (windowInstance && 'createNewTab' in windowInstance) {
+        return await (windowInstance as any).createNewTab(options.url, options)
+      }
+    }
+    throw new Error('Main window instance not available')
+  }
+
+  /**
+   * 处理标签页关闭（委托给主窗口）
+   */
+  private async handleTabClose(tabId: string): Promise<void> {
+    const windowId = this.getMainWindowId()
+    if (windowId) {
+      const windowInstance = this.windowManager.getWindowInstance(windowId)
+      if (windowInstance && 'closeTab' in windowInstance) {
+        await (windowInstance as any).closeTab(tabId)
+      }
+    }
+  }
+
+  /**
+   * 处理标签页切换（委托给主窗口）
+   */
+  private async handleTabSwitch(tabId: string): Promise<void> {
+    const windowId = this.getMainWindowId()
+    if (windowId) {
+      const windowInstance = this.windowManager.getWindowInstance(windowId)
+      if (windowInstance && 'switchTab' in windowInstance) {
+        await (windowInstance as any).switchTab(tabId)
+      }
+    }
+  }
+
+  /**
+   * 处理获取所有标签页（委托给主窗口）
+   */
+  private handleTabGetAll(): any[] {
+    const windowId = this.getMainWindowId()
+    if (windowId) {
+      const windowInstance = this.windowManager.getWindowInstance(windowId)
+      if (windowInstance && 'getTabs' in windowInstance) {
+        return (windowInstance as any).getTabs()
+      }
+    }
+    return []
+  }
+
+  /**
+   * 获取主窗口ID
+   */
+  private getMainWindowId(): string | undefined {
+    const mainWindow = this.windowManager.getWindowByType(WindowType.MAIN)
+    if (mainWindow) {
+      // 通过 WindowManager 的私有方法获取窗口ID
+      for (const [windowId, window] of (this.windowManager as any).windows) {
+        if (window === mainWindow) {
+          return windowId
+        }
+      }
+    }
+    return undefined
   }
 
   /**

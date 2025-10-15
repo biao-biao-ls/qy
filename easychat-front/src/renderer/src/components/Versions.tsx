@@ -29,8 +29,8 @@ const Versions: React.FC = () => {
         chrome: electronVersions.chrome,
         node: electronVersions.node,
         v8: electronVersions.v8,
-        os: process.platform,
-        arch: process.arch
+        os: (window as any).electron?.process?.platform || 'unknown',
+        arch: (window as any).electron?.process?.arch || 'unknown'
       })
     }
 

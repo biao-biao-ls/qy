@@ -5,7 +5,7 @@
 declare namespace JSX {
   interface IntrinsicElements {
     style: React.DetailedHTMLProps<
-      React.StyleHTMLAttributes<HTMLStyleElement> & { jsx?: boolean },
+      React.StyleHTMLAttributes<HTMLStyleElement> & { jsx?: boolean | string },
       HTMLStyleElement
     >
   }

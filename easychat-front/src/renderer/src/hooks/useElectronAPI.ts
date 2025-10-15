@@ -54,23 +54,23 @@ export const useElectronAPI = (): ElectronAPI => {
 
     electronAPI.current = {
       window: {
-        minimize: () => api.ipcRenderer.send('window-minimize'),
-        maximize: () => api.ipcRenderer.send('window-maximize'),
-        close: () => api.ipcRenderer.send('window-close'),
-        setTitle: (title: string) => api.ipcRenderer.send('window-set-title', title),
-        isMaximized: () => api.ipcRenderer.invoke('window-is-maximized')
+        minimize: () => api.ipcRenderer.send('window:minimize'),
+        maximize: () => api.ipcRenderer.send('window:maximize'),
+        close: () => api.ipcRenderer.send('window:close'),
+        setTitle: (title: string) => api.ipcRenderer.send('window:setTitle', title),
+        isMaximized: () => api.ipcRenderer.invoke('window:isMaximized')
       },
       
       tabs: {
-        create: (options: any) => api.ipcRenderer.invoke('tab-create', options),
-        remove: (tabId: string) => api.ipcRenderer.invoke('tab-remove', tabId),
-        switch: (tabId: string) => api.ipcRenderer.invoke('tab-switch', tabId),
-        getAll: () => api.ipcRenderer.invoke('tab-get-all')
+        create: (options: any) => api.ipcRenderer.invoke('tab:create', options),
+        remove: (tabId: string) => api.ipcRenderer.invoke('tab:close', tabId),
+        switch: (tabId: string) => api.ipcRenderer.invoke('tab:switch', tabId),
+        getAll: () => api.ipcRenderer.invoke('tab:getAll')
       },
       
       config: {
-        get: <T>(key: string) => api.ipcRenderer.invoke('config-get', key) as Promise<T>,
-        set: <T>(key: string, value: T) => api.ipcRenderer.invoke('config-set', key, value),
+        get: <T>(key: string) => api.ipcRenderer.invoke('app:getConfig', key) as Promise<T>,
+        set: <T>(key: string, value: T) => api.ipcRenderer.invoke('setting:updateConfig', key, value),
         onChange: (callback: (key: string, value: any) => void) => {
           api.ipcRenderer.on('config-changed', (_event: any, key: string, value: any) => {
             callback(key, value)

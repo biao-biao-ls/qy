@@ -217,22 +217,7 @@ export class MainWindow extends EventEmitter {
       this.window.close()
     })
 
-    // 标签页管理
-    ipcMain.handle('tab:create', async (event, options) => {
-      return await this.createNewTab(options.url, options)
-    })
-
-    ipcMain.handle('tab:close', async (event, tabId) => {
-      await this.closeTab(tabId)
-    })
-
-    ipcMain.handle('tab:switch', async (event, tabId) => {
-      await this.switchTab(tabId)
-    })
-
-    ipcMain.handle('tab:getAll', () => {
-      return this.getTabs()
-    })
+    // 标签页管理已移至全局 IPC 处理器
 
     // 配置获取
     ipcMain.handle('app:getConfig', () => {
