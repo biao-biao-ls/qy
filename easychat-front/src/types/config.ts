@@ -23,6 +23,7 @@ export interface UserPreferences {
   notifications: boolean
   startMinimized: boolean
   closeToTray: boolean
+  downloadPath?: string
 }
 
 export interface TabConfig {

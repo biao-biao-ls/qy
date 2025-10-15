@@ -10,10 +10,14 @@ import { WindowType, WindowOptions, WindowState, WindowError } from '../../types
 import { windowLogger } from '../../utils/logger'
 import { generateId, isDevelopment } from '../../utils/helpers'
 import { DEFAULT_WINDOW_CONFIG } from '../../utils/constants'
+import { MainWindow } from '../windows/MainWindow'
+import { LoginWindow } from '../windows/LoginWindow'
+import { SettingWindow } from '../windows/SettingWindow'
 
 export class WindowManager extends EventEmitter {
   private windows: Map<string, BrowserWindow> = new Map()
   private windowTypes: Map<string, WindowType> = new Map()
+  private windowInstances: Map<string, MainWindow | LoginWindow | SettingWindow> = new Map()
   private static instance: WindowManager | null = null
 
   private constructor() {
@@ -357,6 +361,13 @@ export class WindowManager extends EventEmitter {
 
     // 窗口关闭
     window.on('closed', () => {
+      // 清理窗口实例
+      const windowInstance = this.windowInstances.get(windowId)
+      if (windowInstance) {
+        windowInstance.destroy()
+        this.windowInstances.delete(windowId)
+      }
+      
       this.windows.delete(windowId)
       this.windowTypes.delete(windowId)
       windowLogger.info(`Window closed: ${type} (${windowId})`)
@@ -409,9 +420,135 @@ export class WindowManager extends EventEmitter {
   }
 
   /**
+   * 显示主窗口
+   */
+  public showMainWindow(): void {
+    const mainWindow = this.getWindowByType(WindowType.MAIN)
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore()
+      }
+      mainWindow.show()
+      mainWindow.focus()
+    } else {
+      this.createMainWindow()
+    }
+  }
+
+  /**
+   * 创建主窗口
+   */
+  public async createMainWindow(): Promise<BrowserWindow> {
+    const existingWindow = this.getWindowByType(WindowType.MAIN)
+    if (existingWindow && !existingWindow.isDestroyed()) {
+      existingWindow.show()
+      existingWindow.focus()
+      return existingWindow
+    }
+
+    const browserWindow = this.createWindow(WindowType.MAIN)
+    const mainWindow = new MainWindow(browserWindow)
+    
+    // 存储窗口实例
+    const windowId = this.getWindowId(browserWindow)
+    if (windowId) {
+      this.windowInstances.set(windowId, mainWindow)
+    }
+    
+    // 初始化主窗口
+    await mainWindow.initialize()
+    
+    return browserWindow
+  }
+
+  /**
+   * 创建设置窗口
+   */
+  public async createSettingWindow(): Promise<BrowserWindow> {
+    const existingWindow = this.getWindowByType(WindowType.SETTING)
+    if (existingWindow && !existingWindow.isDestroyed()) {
+      existingWindow.show()
+      existingWindow.focus()
+      return existingWindow
+    }
+
+    const browserWindow = this.createWindow(WindowType.SETTING)
+    const settingWindow = new SettingWindow(browserWindow)
+    
+    // 存储窗口实例
+    const windowId = this.getWindowId(browserWindow)
+    if (windowId) {
+      this.windowInstances.set(windowId, settingWindow)
+    }
+    
+    // 初始化设置窗口
+    await settingWindow.initialize()
+    
+    return browserWindow
+  }
+
+  /**
+   * 创建登录窗口
+   */
+  public async createLoginWindow(): Promise<BrowserWindow> {
+    const existingWindow = this.getWindowByType(WindowType.LOGIN)
+    if (existingWindow && !existingWindow.isDestroyed()) {
+      existingWindow.show()
+      existingWindow.focus()
+      return existingWindow
+    }
+
+    const browserWindow = this.createWindow(WindowType.LOGIN)
+    const loginWindow = new LoginWindow(browserWindow)
+    
+    // 存储窗口实例
+    const windowId = this.getWindowId(browserWindow)
+    if (windowId) {
+      this.windowInstances.set(windowId, loginWindow)
+    }
+    
+    // 初始化登录窗口
+    await loginWindow.initialize()
+    
+    return browserWindow
+  }
+
+  /**
+   * 创建提示窗口
+   */
+  public createAlertWindow(): BrowserWindow {
+    return this.createWindow(WindowType.ALERT)
+  }
+
+  /**
+   * 获取窗口ID
+   */
+  private getWindowId(window: BrowserWindow): string | undefined {
+    for (const [windowId, storedWindow] of this.windows) {
+      if (storedWindow === window) {
+        return windowId
+      }
+    }
+    return undefined
+  }
+
+  /**
+   * 获取窗口实例
+   */
+  public getWindowInstance(windowId: string): MainWindow | LoginWindow | SettingWindow | undefined {
+    return this.windowInstances.get(windowId)
+  }
+
+  /**
    * 销毁管理器
    */
   public destroy(): void {
+    // 销毁所有窗口实例
+    for (const windowInstance of this.windowInstances.values()) {
+      windowInstance.destroy()
+    }
+    this.windowInstances.clear()
+    
     this.closeAllWindows()
     this.removeAllListeners()
     WindowManager.instance = null
