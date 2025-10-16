@@ -1,0 +1,60 @@
+{
+  "timestamp": "2025-10-16T01:59:51.806Z",
+  "platform": "darwin",
+  "arch": "x64",
+  "nodeVersion": "v22.14.0",
+  "testResults": {
+    "functional": {
+      "passed": true,
+      "details": {
+        "build": true,
+        "devStartup": true,
+        "typecheck": true,
+        "lint": true,
+        "fileStructure": true
+      }
+    },
+    "performance": {
+      "passed": true,
+      "details": {
+        "buildTime": 10496,
+        "buildSize": {
+          "main": 98727,
+          "preload": 19313,
+          "renderer": 249438,
+          "total": 367478
+        },
+        "startupTime": 1538,
+        "memoryUsage": {
+          "rss": 39079936,
+          "heapTotal": 5804032,
+          "heapUsed": 4919616,
+          "external": 1555159
+        },
+        "bundleAnalysis": {}
+      }
+    },
+    "crossPlatform": {
+      "passed": true,
+      "details": {
+        "platform": "darwin",
+        "arch": "x64",
+        "nodeVersion": "v22.14.0",
+        "tests": {
+          "pathHandling": true,
+          "electronCompatibility": true,
+          "nodeModulesCompatibility": true,
+          "buildTargets": true,
+          "environmentVariables": true,
+          "fileSystemPermissions": true
+        }
+      }
+    }
+  },
+  "summary": {
+    "totalTests": 16,
+    "passedTests": 16,
+    "failedTests": 0,
+    "overallScore": 100
+  }
+}
