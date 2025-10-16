@@ -2,8 +2,8 @@
  * IPC 通信相关类型定义
  */
 
-import { TabItem, TabCreateOptions, TabUpdateOptions } from './tab'
-import { WindowType, WindowOptions } from './window'
+import { TabCreateOptions, TabItem, TabUpdateOptions } from './tab'
+import { WindowOptions, WindowType } from './window'
 import { PushMessage } from './push'
 import { AppConfig, ConfigKey, ConfigValue } from './config'
 
@@ -156,7 +156,7 @@ export interface ElectronAPI {
     create(options: TabCreateOptions): Promise<TabItem>
     remove(tabId: string): Promise<void>
     activate(tabId: string): Promise<void>
-    switch(tabId: string): Promise<void>  // 兼容性别名
+    switch(tabId: string): Promise<void> // 兼容性别名
     update(tabId: string, options: TabUpdateOptions): Promise<TabItem>
     getAll(): Promise<TabItem[]>
     navigate(tabId: string, url: string): Promise<void>

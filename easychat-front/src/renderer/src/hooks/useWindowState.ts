@@ -2,7 +2,7 @@
  * 窗口状态管理 Hook
  * 管理窗口的最大化、最小化、边框等状态
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useElectronAPI } from './useElectronAPI'
 
 export interface WindowState {
@@ -24,9 +24,9 @@ export const useWindowState = () => {
     isFullScreen: false,
     showBorder: true,
     isDarwin: false,
-    isWin10: false
+    isWin10: false,
   })
-  
+
   const electronAPI = useElectronAPI()
 
   // 初始化窗口状态
@@ -46,10 +46,10 @@ export const useWindowState = () => {
   // 监听窗口状态变化
   useEffect(() => {
     const cleanup1 = electronAPI.ipc.on('window-maximized', (_, isMaximized: boolean) => {
-      setWindowState(prev => ({ 
-        ...prev, 
+      setWindowState(prev => ({
+        ...prev,
         isMaximized,
-        showBorder: !prev.isWin10 && !isMaximized
+        showBorder: !prev.isWin10 && !isMaximized,
       }))
     })
 
@@ -66,7 +66,7 @@ export const useWindowState = () => {
         ...prev,
         isDarwin: platformInfo.isDarwin,
         isWin10: platformInfo.isWin10,
-        showBorder: !platformInfo.isWin10 && !prev.isMaximized
+        showBorder: !platformInfo.isWin10 && !prev.isMaximized,
       }))
     })
 
@@ -92,16 +92,19 @@ export const useWindowState = () => {
     electronAPI.window.close()
   }, [electronAPI])
 
-  const setTitle = useCallback((title: string) => {
-    electronAPI.window.setTitle(title)
-  }, [electronAPI])
+  const setTitle = useCallback(
+    (title: string) => {
+      electronAPI.window.setTitle(title)
+    },
+    [electronAPI]
+  )
 
   return {
     windowState,
     minimize,
     maximize,
     close,
-    setTitle
+    setTitle,
   }
 }
 
@@ -113,7 +116,7 @@ export const useDragRegion = () => {
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
     // 只有左键点击才触发拖拽
     if (event.button !== 0) return
-    
+
     // 阻止在按钮等交互元素上触发拖拽
     const target = event.target as HTMLElement
     if (target.tagName === 'BUTTON' || target.closest('button')) {
@@ -131,7 +134,7 @@ export const useDragRegion = () => {
     onMouseDown: handleMouseDown,
     style: {
       WebkitAppRegion: 'drag' as const,
-      userSelect: 'none' as const
-    }
+      userSelect: 'none' as const,
+    },
   }
 }

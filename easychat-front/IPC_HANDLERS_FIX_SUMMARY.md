@@ -13,6 +13,7 @@ Error: No handler registered for 'tab-create'
 ## 根本原因分析
 
 ### 时序问题
+
 应用的启动流程存在时序问题：
 
 1. **应用初始化** (`initialize()`) - 设置全局 IPC 处理器
@@ -22,6 +23,7 @@ Error: No handler registered for 'tab-create'
 但是渲染进程可能在主窗口完全初始化之前就开始调用 IPC 方法，导致处理器未注册错误。
 
 ### 架构问题
+
 - **分散的处理器注册**: IPC 处理器分散在不同的地方注册
 - **依赖关系**: 标签页处理器依赖于主窗口的存在
 - **缺乏统一管理**: 没有统一的 IPC 处理器管理机制
@@ -38,11 +40,11 @@ private setupGlobalIpcHandlers(): void {
   // 应用信息
   ipcMain.handle('app:getVersion', () => app.getVersion())
   ipcMain.handle('app:getInfo', () => ({ /* ... */ }))
-  
+
   // 窗口状态
   ipcMain.handle('window:isMaximized', () => { /* ... */ })
   ipcMain.handle('window:setTitle', (_, title: string) => { /* ... */ })
-  
+
   // 标签页管理（委托模式）
   ipcMain.handle('tab:create', async (event, options) => {
     return await this.handleTabCreate(options)
@@ -56,7 +58,7 @@ private setupGlobalIpcHandlers(): void {
   ipcMain.handle('tab:getAll', () => {
     return this.handleTabGetAll()
   })
-  
+
   // 用户信息
   ipcMain.handle('get-user-info', () => ({ /* ... */ }))
 }
@@ -109,7 +111,7 @@ ipcMain.handle('tab:create', async (event, options) => {
 
 ```
 应用启动流程：
-1. App.initialize() 
+1. App.initialize()
    ├── setupGlobalIpcHandlers() ✅ 注册所有 IPC 处理器
    ├── setupAutoUpdater()
    └── 其他初始化...
@@ -132,6 +134,7 @@ IPC 调用流程：
 ```
 
 这种架构的优势：
+
 - **早期可用**: 处理器在应用初始化时就注册
 - **统一管理**: 所有处理器在一个地方管理
 - **灵活委托**: 可以根据需要委托给不同的窗口或服务
@@ -140,6 +143,7 @@ IPC 调用流程：
 ## 验证结果
 
 ### 构建验证 ✅
+
 ```bash
 npm run build
 # ✅ TypeScript 类型检查通过
@@ -149,6 +153,7 @@ npm run build
 ```
 
 ### 功能验证 ✅
+
 - ✅ 所有 IPC 处理器在应用启动时注册
 - ✅ 渲染进程可以立即调用 IPC 方法
 - ✅ 窗口控制功能正常
@@ -156,6 +161,7 @@ npm run build
 - ✅ 应用信息获取正常
 
 ### 性能影响
+
 - **主进程大小**: 从 75.56 kB 增加到 78.08 kB（增加了委托逻辑）
 - **启动时间**: 略有改善（减少了异步等待）
 - **内存使用**: 基本无变化
@@ -163,6 +169,7 @@ npm run build
 ## 后续优化建议
 
 ### 1. IPC 性能监控
+
 ```typescript
 // 添加 IPC 调用性能监控
 ipcMain.handle('tab:create', async (event, options) => {
@@ -179,6 +186,7 @@ ipcMain.handle('tab:create', async (event, options) => {
 ```
 
 ### 2. 缓存机制
+
 ```typescript
 // 对频繁调用的方法添加缓存
 private tabsCache: any[] | null = null
@@ -189,7 +197,7 @@ private handleTabGetAll(): any[] {
   if (this.tabsCache && (now - this.tabsCacheTime) < 1000) {
     return this.tabsCache
   }
-  
+
   // 获取最新数据并缓存
   this.tabsCache = this.getTabsFromMainWindow()
   this.tabsCacheTime = now
@@ -198,6 +206,7 @@ private handleTabGetAll(): any[] {
 ```
 
 ### 3. 类型安全增强
+
 ```typescript
 // 定义严格的 IPC 接口
 interface TabCreateOptions {
@@ -227,6 +236,7 @@ ipcMain.handle('tab:create', async (event, options: TabCreateOptions): Promise<T
 - ⚡ **性能提升**: 减少了异步等待和重复注册
 
 ### 关键成果
+
 - **零 IPC 错误**: 所有 IPC 处理器正确注册和工作
 - **统一管理**: 集中的 IPC 处理器管理
 - **灵活架构**: 支持委托模式的可扩展架构

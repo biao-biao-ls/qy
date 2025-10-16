@@ -1,0 +1,83 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "dev",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "label": "npm: dev",
+      "detail": "Start development server",
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "type": "npm",
+      "script": "build:dev",
+      "group": "build",
+      "label": "npm: build:dev",
+      "detail": "Build for development",
+      "problemMatcher": ["$tsc"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "type": "npm",
+      "script": "build",
+      "group": "build",
+      "label": "npm: build",
+      "detail": "Build for production",
+      "problemMatcher": ["$tsc"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "type": "npm",
+      "script": "typecheck",
+      "group": "test",
+      "label": "npm: typecheck",
+      "detail": "Run TypeScript type checking",
+      "problemMatcher": ["$tsc"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "type": "npm",
+      "script": "lint",
+      "group": "test",
+      "label": "npm: lint",
+      "detail": "Run ESLint",
+      "problemMatcher": ["$eslint-stylish"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "type": "npm",
+      "script": "format",
+      "group": "test",
+      "label": "npm: format",
+      "detail": "Format code with Prettier",
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "Kill Electron Process",
+      "command": "pkill",
+      "args": ["-f", "electron"],
+      "group": "build",
+      "detail": "Kill any running Electron processes",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -67,10 +67,12 @@ export default defineConfig({
       react({
         // React 优化配置
         babel: {
-          plugins: isDev ? [] : [
-            // 生产环境移除 console.log
-            ['transform-remove-console', { exclude: ['error', 'warn'] }],
-          ],
+          plugins: isDev
+            ? []
+            : [
+                // 生产环境移除 console.log
+                ['transform-remove-console', { exclude: ['error', 'warn'] }],
+              ],
         },
       }),
     ],
@@ -79,7 +81,7 @@ export default defineConfig({
       minify: !isDev ? 'terser' : false,
       sourcemap: isDev ? true : 'hidden',
       target: 'chrome120',
-      
+
       // 代码分割和优化
       rollupOptions: {
         input: {
@@ -95,10 +97,10 @@ export default defineConfig({
           // 资源文件命名优化
           entryFileNames: 'assets/[name]-[hash].js',
           chunkFileNames: 'assets/chunks/[name]-[hash].js',
-          assetFileNames: (assetInfo) => {
+          assetFileNames: assetInfo => {
             const info = assetInfo.name?.split('.') || []
             const ext = info[info.length - 1]
-            
+
             // 根据文件类型分类存放
             if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico)$/i.test(assetInfo.name || '')) {
               return `assets/images/[name]-[hash].${ext}`
@@ -111,9 +113,9 @@ export default defineConfig({
             }
             return `assets/[name]-[hash].${ext}`
           },
-          
+
           // 代码分割优化
-          manualChunks: (id) => {
+          manualChunks: id => {
             // 将 node_modules 中的依赖分离到 vendor chunk
             if (id.includes('node_modules')) {
               if (id.includes('react') || id.includes('react-dom')) {
@@ -124,48 +126,50 @@ export default defineConfig({
               }
               return 'vendor'
             }
-            
+
             // 将共享组件分离到单独的 chunk
             if (id.includes('src/renderer/src/components')) {
               return 'components'
             }
-            
+
             // 将工具函数分离到单独的 chunk
             if (id.includes('src/renderer/src/utils') || id.includes('src/utils')) {
               return 'utils'
             }
-            
+
             // 默认返回 undefined，让 Vite 自动处理
             return undefined
           },
         },
       },
-      
+
       // 构建性能优化
       reportCompressedSize: false,
       chunkSizeWarningLimit: 1000,
-      
+
       // Terser 压缩配置（生产环境）
-      terserOptions: isDev ? undefined : {
-        compress: {
-          drop_console: true,
-          drop_debugger: true,
-          pure_funcs: ['console.log'],
-        },
-        mangle: {
-          safari10: true,
-        },
-        format: {
-          comments: false,
-        },
-      },
+      terserOptions: isDev
+        ? undefined
+        : {
+            compress: {
+              drop_console: true,
+              drop_debugger: true,
+              pure_funcs: ['console.log'],
+            },
+            mangle: {
+              safari10: true,
+            },
+            format: {
+              comments: false,
+            },
+          },
     },
-    
+
     // CSS 配置优化
     css: {
       devSourcemap: isDev,
     },
-    
+
     // 静态资源配置
     assetsInclude: [
       '**/*.ico',
@@ -179,26 +183,34 @@ export default defineConfig({
       '**/*.ttf',
       '**/*.otf',
     ],
-    
+
     // 开发服务器配置
     server: {
       port: 5173,
       strictPort: true,
+      host: 'localhost',
       hmr: {
         port: 5174,
+        overlay: true, // 显示错误覆盖层
+      },
+      // 开发服务器性能优化
+      fs: {
+        strict: false, // 允许访问工作区外的文件
+      },
+      // 代理配置（如果需要）
+      proxy: {
+        // '/api': {
+        //   target: 'http://localhost:3000',
+        //   changeOrigin: true,
+        //   rewrite: (path) => path.replace(/^\/api/, '')
+        // }
       },
     },
-    
+
     // 预构建优化
     optimizeDeps: {
-      include: [
-        'react',
-        'react-dom',
-        'react/jsx-runtime',
-      ],
-      exclude: [
-        'electron',
-      ],
+      include: ['react', 'react-dom', 'react/jsx-runtime'],
+      exclude: ['electron'],
     },
   },
 })

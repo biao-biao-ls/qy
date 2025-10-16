@@ -2,7 +2,7 @@
  * 模态框组件
  * 提供统一的模态框样式和行为
  */
-import React, { useEffect, useCallback, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from './Button'
 
@@ -36,7 +36,7 @@ export const Modal: React.FC<ModalProps> = ({
   closeOnEscape = true,
   showCloseButton = true,
   className = '',
-  children
+  children,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null)
   const previousActiveElement = useRef<HTMLElement | null>(null)
@@ -60,7 +60,7 @@ export const Modal: React.FC<ModalProps> = ({
     if (open) {
       // 保存当前焦点元素
       previousActiveElement.current = document.activeElement as HTMLElement
-      
+
       // 将焦点移到模态框
       setTimeout(() => {
         modalRef.current?.focus()
@@ -74,11 +74,14 @@ export const Modal: React.FC<ModalProps> = ({
   }, [open])
 
   // 处理遮罩点击
-  const handleOverlayClick = useCallback((event: React.MouseEvent) => {
-    if (closeOnOverlayClick && event.target === event.currentTarget) {
-      onClose()
-    }
-  }, [closeOnOverlayClick, onClose])
+  const handleOverlayClick = useCallback(
+    (event: React.MouseEvent) => {
+      if (closeOnOverlayClick && event.target === event.currentTarget) {
+        onClose()
+      }
+    },
+    [closeOnOverlayClick, onClose]
+  )
 
   // 阻止模态框内容区域的点击事件冒泡
   const handleContentClick = useCallback((event: React.MouseEvent) => {
@@ -94,45 +97,43 @@ export const Modal: React.FC<ModalProps> = ({
         className={`modal modal--${size}`}
         onClick={handleContentClick}
         tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
+        role='dialog'
+        aria-modal='true'
         aria-labelledby={title ? 'modal-title' : undefined}
       >
         {/* 模态框头部 */}
-        {(title || showCloseButton) && (
-          <div className="modal__header">
-            {title && (
-              <h2 id="modal-title" className="modal__title">
+        {title || showCloseButton ? (
+          <div className='modal__header'>
+            {title ? (
+              <h2 id='modal-title' className='modal__title'>
                 {title}
               </h2>
-            )}
-            
-            {showCloseButton && (
+            ) : null}
+
+            {showCloseButton ? (
               <Button
-                variant="light"
-                size="small"
-                className="modal__close-button"
+                variant='light'
+                size='small'
+                className='modal__close-button'
                 onClick={onClose}
-                aria-label="关闭"
+                aria-label='关闭'
               >
-                <svg width="16" height="16" viewBox="0 0 16 16">
+                <svg width='16' height='16' viewBox='0 0 16 16'>
                   <path
-                    d="M8 6.586L11.293 3.293a1 1 0 011.414 1.414L9.414 8l3.293 3.293a1 1 0 01-1.414 1.414L8 9.414l-3.293 3.293a1 1 0 01-1.414-1.414L6.586 8 3.293 4.707a1 1 0 011.414-1.414L8 6.586z"
-                    fill="currentColor"
+                    d='M8 6.586L11.293 3.293a1 1 0 011.414 1.414L9.414 8l3.293 3.293a1 1 0 01-1.414 1.414L8 9.414l-3.293 3.293a1 1 0 01-1.414-1.414L6.586 8 3.293 4.707a1 1 0 011.414-1.414L8 6.586z'
+                    fill='currentColor'
                   />
                 </svg>
               </Button>
-            )}
+            ) : null}
           </div>
-        )}
+        ) : null}
 
         {/* 模态框内容 */}
-        <div className="modal__content">
-          {children}
-        </div>
+        <div className='modal__content'>{children}</div>
       </div>
 
-      <style jsx="true">{`
+      <style jsx='true'>{`
         .modal-overlay {
           position: fixed;
           top: 0;
@@ -147,7 +148,7 @@ export const Modal: React.FC<ModalProps> = ({
           padding: 20px;
           animation: modal-overlay-enter 0.2s ease-out;
         }
-        
+
         @keyframes modal-overlay-enter {
           from {
             opacity: 0;
@@ -156,7 +157,7 @@ export const Modal: React.FC<ModalProps> = ({
             opacity: 1;
           }
         }
-        
+
         .modal {
           background: #fff;
           border-radius: 8px;
@@ -168,7 +169,7 @@ export const Modal: React.FC<ModalProps> = ({
           animation: modal-enter 0.2s ease-out;
           outline: none;
         }
-        
+
         @keyframes modal-enter {
           from {
             opacity: 0;
@@ -179,23 +180,23 @@ export const Modal: React.FC<ModalProps> = ({
             transform: scale(1) translateY(0);
           }
         }
-        
+
         /* 尺寸 */
         .modal--small {
           width: 100%;
           max-width: 400px;
         }
-        
+
         .modal--medium {
           width: 100%;
           max-width: 600px;
         }
-        
+
         .modal--large {
           width: 100%;
           max-width: 800px;
         }
-        
+
         .modal--fullscreen {
           width: 100%;
           height: 100%;
@@ -203,7 +204,7 @@ export const Modal: React.FC<ModalProps> = ({
           max-height: none;
           border-radius: 0;
         }
-        
+
         .modal__header {
           display: flex;
           align-items: center;
@@ -212,61 +213,61 @@ export const Modal: React.FC<ModalProps> = ({
           border-bottom: 1px solid #dee2e6;
           flex-shrink: 0;
         }
-        
+
         .modal__title {
           margin: 0;
           font-size: 18px;
           font-weight: 600;
           color: #212529;
         }
-        
+
         .modal__close-button {
           margin-left: 16px;
         }
-        
+
         .modal__content {
           flex: 1;
           overflow-y: auto;
           padding: 20px;
         }
-        
+
         /* 响应式 */
         @media (max-width: 768px) {
           .modal-overlay {
             padding: 10px;
           }
-          
+
           .modal--small,
           .modal--medium,
           .modal--large {
             width: 100%;
             max-width: none;
           }
-          
+
           .modal__header {
             padding: 12px 16px;
           }
-          
+
           .modal__title {
             font-size: 16px;
           }
-          
+
           .modal__content {
             padding: 16px;
           }
         }
-        
+
         /* 暗色主题 */
         @media (prefers-color-scheme: dark) {
           .modal {
             background: #2d3748;
             color: #fff;
           }
-          
+
           .modal__header {
             border-bottom-color: #4a5568;
           }
-          
+
           .modal__title {
             color: #fff;
           }
@@ -301,7 +302,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   message,
   confirmText = '确认',
   cancelText = '取消',
-  variant = 'danger'
+  variant = 'danger',
 }) => {
   const handleConfirm = useCallback(() => {
     onConfirm()
@@ -313,35 +314,35 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       open={open}
       onClose={onClose}
       title={title}
-      size="small"
+      size='small'
       closeOnOverlayClick={false}
       showCloseButton={false}
     >
-      <div className="confirm-modal">
-        <div className="confirm-modal__icon">
+      <div className='confirm-modal'>
+        <div className='confirm-modal__icon'>
           {variant === 'danger' && (
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="#dc3545">
-              <path d="M24 4C12.96 4 4 12.96 4 24s8.96 20 20 20 20-8.96 20-20S35.04 4 24 4zm2 30h-4v-4h4v4zm0-8h-4V14h4v12z"/>
+            <svg width='48' height='48' viewBox='0 0 48 48' fill='#dc3545'>
+              <path d='M24 4C12.96 4 4 12.96 4 24s8.96 20 20 20 20-8.96 20-20S35.04 4 24 4zm2 30h-4v-4h4v4zm0-8h-4V14h4v12z' />
             </svg>
           )}
-          
+
           {variant === 'warning' && (
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="#ffc107">
-              <path d="M2 42h44L24 4 2 42zm22-6h-4v-4h4v4zm0-8h-4v-8h4v8z"/>
+            <svg width='48' height='48' viewBox='0 0 48 48' fill='#ffc107'>
+              <path d='M2 42h44L24 4 2 42zm22-6h-4v-4h4v4zm0-8h-4v-8h4v8z' />
             </svg>
           )}
-          
+
           {variant === 'info' && (
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="#17a2b8">
-              <path d="M24 4C12.96 4 4 12.96 4 24s8.96 20 20 20 20-8.96 20-20S35.04 4 24 4zm2 30h-4V22h4v12zm0-16h-4v-4h4v4z"/>
+            <svg width='48' height='48' viewBox='0 0 48 48' fill='#17a2b8'>
+              <path d='M24 4C12.96 4 4 12.96 4 24s8.96 20 20 20 20-8.96 20-20S35.04 4 24 4zm2 30h-4V22h4v12zm0-16h-4v-4h4v4z' />
             </svg>
           )}
         </div>
-        
-        <p className="confirm-modal__message">{message}</p>
-        
-        <div className="confirm-modal__actions">
-          <Button variant="light" onClick={onClose}>
+
+        <p className='confirm-modal__message'>{message}</p>
+
+        <div className='confirm-modal__actions'>
+          <Button variant='light' onClick={onClose}>
             {cancelText}
           </Button>
           <Button variant={variant} onClick={handleConfirm}>
@@ -349,28 +350,28 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </Button>
         </div>
 
-        <style jsx="true">{`
+        <style jsx='true'>{`
           .confirm-modal {
             text-align: center;
           }
-          
+
           .confirm-modal__icon {
             margin-bottom: 16px;
           }
-          
+
           .confirm-modal__message {
             margin: 0 0 24px 0;
             font-size: 16px;
             line-height: 1.5;
             color: #495057;
           }
-          
+
           .confirm-modal__actions {
             display: flex;
             gap: 12px;
             justify-content: center;
           }
-          
+
           @media (prefers-color-scheme: dark) {
             .confirm-modal__message {
               color: #e2e8f0;

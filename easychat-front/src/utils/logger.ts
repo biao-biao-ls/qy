@@ -2,7 +2,7 @@
  * 日志管理工具
  */
 
-import { configure, getLogger, Logger } from 'log4js'
+import { Logger, configure, getLogger } from 'log4js'
 import { app } from 'electron'
 import path from 'path'
 

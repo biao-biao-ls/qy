@@ -15,12 +15,7 @@ export class SimpleStore<T extends Record<string, any>> extends EventEmitter {
   private filePath: string
   private defaults: T
 
-  constructor(options: {
-    defaults: T
-    name: string
-    fileExtension?: string
-    cwd?: string
-  }) {
+  constructor(options: { defaults: T; name: string; fileExtension?: string; cwd?: string }) {
     super()
 
     this.defaults = deepClone(options.defaults)

@@ -9,13 +9,13 @@ const electronAPI = {
       ipcRenderer.on(channel, listener)
       return () => ipcRenderer.removeListener(channel, listener)
     },
-    removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel)
+    removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel),
   },
   process: {
     versions: process.versions,
     platform: process.platform,
-    arch: process.arch
-  }
+    arch: process.arch,
+  },
 }
 
 // 创建简化的 API 接口
@@ -25,13 +25,13 @@ const api = {
     maximize: () => ipcRenderer.invoke('window:maximize'),
     close: () => ipcRenderer.invoke('window:close'),
     setTitle: (title: string) => ipcRenderer.invoke('window:setTitle', title),
-    isMaximized: () => ipcRenderer.invoke('window:isMaximized')
+    isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
   },
   tabs: {
     create: (options: any) => ipcRenderer.invoke('tab:create', options),
     remove: (tabId: string) => ipcRenderer.invoke('tab:close', tabId),
     switch: (tabId: string) => ipcRenderer.invoke('tab:switch', tabId),
-    getAll: () => ipcRenderer.invoke('tab:getAll')
+    getAll: () => ipcRenderer.invoke('tab:getAll'),
   },
   config: {
     get: (key: string) => ipcRenderer.invoke('app:getConfig', key),
@@ -40,11 +40,11 @@ const api = {
       ipcRenderer.on('config-changed', (_, key: string, value: any) => {
         callback(key, value)
       })
-    }
+    },
   },
   app: {
     getVersion: () => ipcRenderer.invoke('app:getVersion'),
-    getInfo: () => ipcRenderer.invoke('app:getInfo')
+    getInfo: () => ipcRenderer.invoke('app:getInfo'),
   },
   push: {
     start: () => ipcRenderer.invoke('push:start'),
@@ -66,13 +66,13 @@ const api = {
     onConnectionStateChanged: (callback: (state: any) => void) => {
       ipcRenderer.on('push:connection-state-changed', (_, state) => callback(state))
       return () => ipcRenderer.removeAllListeners('push:connection-state-changed')
-    }
+    },
   },
   dev: {
     toggleDevTools: () => ipcRenderer.invoke('dev:toggleDevTools'),
     openDevTools: () => ipcRenderer.invoke('dev:openDevTools'),
     closeDevTools: () => ipcRenderer.invoke('dev:closeDevTools'),
-    isDevToolsOpened: () => ipcRenderer.invoke('dev:isDevToolsOpened')
+    isDevToolsOpened: () => ipcRenderer.invoke('dev:isDevToolsOpened'),
   },
   update: {
     check: () => ipcRenderer.invoke('update:check'),
@@ -103,10 +103,10 @@ const api = {
     onDownloaded: (callback: () => void) => {
       ipcRenderer.on('update:downloaded', callback)
       return () => ipcRenderer.removeAllListeners('update:downloaded')
-    }
+    },
   },
   shell: {
-    openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url)
+    openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
   },
   ipc: {
     send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, ...args),
@@ -115,8 +115,8 @@ const api = {
       ipcRenderer.on(channel, callback)
       return () => ipcRenderer.removeAllListeners(channel)
     },
-    removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel)
-  }
+    removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel),
+  },
 }
 
 // 暴露 API 到渲染进程

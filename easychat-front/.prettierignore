@@ -1,6 +1,42 @@
-out
-dist
+# 构建输出
+dist/
+out/
+build/
+
+# 依赖
+node_modules/
+
+# 日志
+*.log
+
+# 临时文件
+.tmp/
+.cache/
+
+# 系统文件
+.DS_Store
+
+# 配置文件
+package-lock.json
+yarn.lock
 pnpm-lock.yaml
-LICENSE.md
-tsconfig.json
-tsconfig.*.json
+
+# 自动生成的文件
+*.min.js
+*.min.css
+
+# 二进制文件
+*.ico
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# 文档
+CHANGELOG.md
+LICENSE

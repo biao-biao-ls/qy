@@ -3,7 +3,7 @@
  * 重构自原始 MainWindow，简化架构并移除过度抽象
  */
 
-import { BrowserWindow, BrowserView, ipcMain, Rectangle, shell } from 'electron'
+import { BrowserView, BrowserWindow, Rectangle, ipcMain, shell } from 'electron'
 import { EventEmitter } from 'events'
 import { WindowType } from '../../types/window'
 import { TabManager } from '../../main/managers/TabManager'
@@ -64,7 +64,10 @@ export class MainWindow extends EventEmitter {
   /**
    * 创建新标签页
    */
-  public async createNewTab(url: string, options?: { title?: string; isActive?: boolean }): Promise<string> {
+  public async createNewTab(
+    url: string,
+    options?: { title?: string; isActive?: boolean }
+  ): Promise<string> {
     try {
       const tabId = await this.tabManager.createTab({
         url,
@@ -190,7 +193,7 @@ export class MainWindow extends EventEmitter {
    */
   private setupWindowEvents(): void {
     // 设置窗口打开处理器
-    this.window.webContents.setWindowOpenHandler((details) => {
+    this.window.webContents.setWindowOpenHandler(details => {
       return this.handleWindowOpen(details)
     })
 
@@ -242,7 +245,14 @@ export class MainWindow extends EventEmitter {
     }
 
     // 检查是否为允许的域名
-    const allowedDomains = ['jlcpcb.com', 'jlcmc.com', 'jlc3dp.com', 'jlccnc.com', 'jlcdfm.com', 'lcsc.com']
+    const allowedDomains = [
+      'jlcpcb.com',
+      'jlcmc.com',
+      'jlc3dp.com',
+      'jlccnc.com',
+      'jlcdfm.com',
+      'lcsc.com',
+    ]
     const isAllowedDomain = allowedDomains.some(domain => url.includes(domain))
 
     if (isAllowedDomain) {

@@ -3,7 +3,7 @@
  * 重构自原始 SettingWindow，简化架构
  */
 
-import { BrowserWindow, ipcMain, dialog, session } from 'electron'
+import { BrowserWindow, dialog, ipcMain, session } from 'electron'
 import { EventEmitter } from 'events'
 import { AppConfig } from '../config/AppConfig'
 import { windowLogger } from '../../utils/logger'
@@ -204,7 +204,7 @@ export class SettingWindow extends EventEmitter {
       const dialogResult = result as any
       if (!dialogResult.canceled && dialogResult.filePaths && dialogResult.filePaths.length > 0) {
         const selectedPath = dialogResult.filePaths[0]
-        
+
         if (selectedPath) {
           // 更新配置
           this.appConfig.setDownloadsPath(selectedPath)
@@ -228,7 +228,7 @@ export class SettingWindow extends EventEmitter {
 
       if (proxyConfig && proxyConfig.host && proxyConfig.port) {
         const { type, host, port, username, password } = proxyConfig
-        
+
         if (username && password) {
           proxyRules = `${type}://${username}:${password}@${host}:${port}`
         } else {

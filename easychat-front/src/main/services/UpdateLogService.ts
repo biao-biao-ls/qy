@@ -48,7 +48,7 @@ export class UpdateLogService {
     totalDownloads: 0,
     totalInstalls: 0,
     totalErrors: 0,
-    totalRollbacks: 0
+    totalRollbacks: 0,
   }
 
   private constructor() {
@@ -84,7 +84,7 @@ export class UpdateLogService {
     const logEntry: UpdateLogEntry = {
       ...entry,
       id: this.generateId(),
-      timestamp: new Date()
+      timestamp: new Date(),
     }
 
     this.logs.unshift(logEntry)
@@ -114,7 +114,7 @@ export class UpdateLogService {
       type: 'check',
       message,
       error,
-      success
+      success,
     })
   }
 
@@ -122,9 +122,9 @@ export class UpdateLogService {
    * 记录更新下载
    */
   public async logDownload(
-    version: string, 
-    success: boolean, 
-    message: string, 
+    version: string,
+    success: boolean,
+    message: string,
     duration?: number,
     error?: string
   ): Promise<void> {
@@ -134,7 +134,7 @@ export class UpdateLogService {
       message,
       error,
       success,
-      duration
+      duration,
     })
   }
 
@@ -156,7 +156,7 @@ export class UpdateLogService {
       message,
       error,
       success,
-      duration
+      duration,
     })
   }
 
@@ -169,7 +169,7 @@ export class UpdateLogService {
       version,
       message,
       error,
-      success: false
+      success: false,
     })
   }
 
@@ -189,7 +189,7 @@ export class UpdateLogService {
       toVersion,
       message,
       error,
-      success
+      success,
     })
   }
 
@@ -241,16 +241,16 @@ export class UpdateLogService {
    */
   public async exportLogs(filePath?: string): Promise<string> {
     const exportPath = filePath || join(app.getPath('downloads'), `update-logs-${Date.now()}.json`)
-    
+
     const exportData = {
       exportTime: new Date(),
       statistics: this.statistics,
-      logs: this.logs
+      logs: this.logs,
     }
 
     await fs.writeFile(exportPath, JSON.stringify(exportData, null, 2), 'utf-8')
     updateLogger.info(`UpdateLogService: 导出日志到 ${exportPath}`)
-    
+
     return exportPath
   }
 
@@ -261,13 +261,13 @@ export class UpdateLogService {
     try {
       const data = await fs.readFile(this.logFilePath, 'utf-8')
       const parsedLogs = JSON.parse(data)
-      
+
       // 转换时间戳
       this.logs = parsedLogs.map((log: any) => ({
         ...log,
-        timestamp: new Date(log.timestamp)
+        timestamp: new Date(log.timestamp),
       }))
-      
+
       updateLogger.info(`UpdateLogService: 加载了 ${this.logs.length} 条日志`)
     } catch (error) {
       if ((error as any).code !== 'ENOENT') {
@@ -291,15 +291,17 @@ export class UpdateLogService {
     try {
       const data = await fs.readFile(this.statisticsFilePath, 'utf-8')
       const parsedStats = JSON.parse(data)
-      
+
       // 转换时间戳
       this.statistics = {
         ...parsedStats,
         lastCheckTime: parsedStats.lastCheckTime ? new Date(parsedStats.lastCheckTime) : undefined,
-        lastUpdateTime: parsedStats.lastUpdateTime ? new Date(parsedStats.lastUpdateTime) : undefined,
-        lastErrorTime: parsedStats.lastErrorTime ? new Date(parsedStats.lastErrorTime) : undefined
+        lastUpdateTime: parsedStats.lastUpdateTime
+          ? new Date(parsedStats.lastUpdateTime)
+          : undefined,
+        lastErrorTime: parsedStats.lastErrorTime ? new Date(parsedStats.lastErrorTime) : undefined,
       }
-      
+
       updateLogger.info('UpdateLogService: 加载统计信息完成')
     } catch (error) {
       if ((error as any).code !== 'ENOENT') {

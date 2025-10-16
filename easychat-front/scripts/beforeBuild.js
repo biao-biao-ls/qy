@@ -23,9 +23,9 @@ if (fs.existsSync(outDir)) {
 const resourcesDir = path.join(__dirname, '..', 'resources')
 const requiredResources = [
   'jlcAssistant256.ico',
-  'jlcAssistant512.ico', 
+  'jlcAssistant512.ico',
   'jlcAssistant512.png',
-  'YourAppIcon.icns'
+  'YourAppIcon.icns',
 ]
 
 for (const resource of requiredResources) {
@@ -44,13 +44,10 @@ const versionInfo = {
   buildTime: new Date().toISOString(),
   nodeVersion: process.version,
   platform: process.platform,
-  arch: process.arch
+  arch: process.arch,
 }
 
-fs.writeFileSync(
-  path.join(outDir, 'version.json'),
-  JSON.stringify(versionInfo, null, 2)
-)
+fs.writeFileSync(path.join(outDir, 'version.json'), JSON.stringify(versionInfo, null, 2))
 
 console.log('✅ Before build script completed successfully')
 

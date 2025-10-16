@@ -2,7 +2,7 @@
  * 配置管理 Hook
  * 提供应用配置的读取、写入和监听功能
  */
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useElectronAPI } from './useElectronAPI'
 
 export interface AppConfig {
@@ -17,7 +17,7 @@ export interface AppConfig {
     isMaximized: boolean
     isFullScreen: boolean
   }
-  
+
   // 用户偏好
   preferences: {
     language: string
@@ -25,14 +25,14 @@ export interface AppConfig {
     autoUpdate: boolean
     notifications: boolean
   }
-  
+
   // 标签页配置
   tabs: {
     defaultUrls: string[]
     maxTabs: number
     restoreOnStartup: boolean
   }
-  
+
   // 网络配置
   network: {
     proxy?: {
@@ -66,7 +66,7 @@ export const useConfig = <T = any>(key?: string, defaultValue?: T) => {
       try {
         setIsLoading(true)
         setError(null)
-        
+
         if (key) {
           const value = await electronAPI.config.get<T>(key)
           setConfig(value !== undefined ? value : defaultValue || null)
@@ -97,55 +97,64 @@ export const useConfig = <T = any>(key?: string, defaultValue?: T) => {
   }, [electronAPI, key])
 
   // 更新配置
-  const updateConfig = useCallback(async (value: T): Promise<boolean> => {
-    if (!key) {
-      console.warn('Cannot update config without key')
-      return false
-    }
+  const updateConfig = useCallback(
+    async (value: T): Promise<boolean> => {
+      if (!key) {
+        console.warn('Cannot update config without key')
+        return false
+      }
 
-    try {
-      await electronAPI.config.set(key, value)
-      setConfig(value)
-      return true
-    } catch (err) {
-      console.error('Failed to update config:', err)
-      setError(err as Error)
-      return false
-    }
-  }, [electronAPI, key])
+      try {
+        await electronAPI.config.set(key, value)
+        setConfig(value)
+        return true
+      } catch (err) {
+        console.error('Failed to update config:', err)
+        setError(err as Error)
+        return false
+      }
+    },
+    [electronAPI, key]
+  )
 
   // 获取配置值
-  const getConfig = useCallback(async <K = T>(configKey?: string): Promise<K | null> => {
-    try {
-      const targetKey = configKey || key
-      if (!targetKey) {
-        throw new Error('Config key is required')
+  const getConfig = useCallback(
+    async <K = T>(configKey?: string): Promise<K | null> => {
+      try {
+        const targetKey = configKey || key
+        if (!targetKey) {
+          throw new Error('Config key is required')
+        }
+
+        const value = await electronAPI.config.get<K>(targetKey)
+        return value !== undefined ? value : null
+      } catch (err) {
+        console.error('Failed to get config:', err)
+        return null
       }
-      
-      const value = await electronAPI.config.get<K>(targetKey)
-      return value !== undefined ? value : null
-    } catch (err) {
-      console.error('Failed to get config:', err)
-      return null
-    }
-  }, [electronAPI, key])
+    },
+    [electronAPI, key]
+  )
 
   // 设置配置值
-  const setConfigValue = useCallback(async <K = T>(configKey: string, value: K): Promise<boolean> => {
-    try {
-      await electronAPI.config.set(configKey, value)
-      
-      // 如果更新的是当前监听的 key，更新本地状态
-      if (configKey === key) {
-        setConfig(value as unknown as T)
+  const setConfigValue = useCallback(
+    async <K = T>(configKey: string, value: K): Promise<boolean> => {
+      try {
+        await electronAPI.config.set(configKey, value)
+
+        // 如果更新的是当前监听的 key，更新本地状态
+        if (configKey === key) {
+          setConfig(value as unknown as T)
+        }
+
+        return true
+      } catch (err) {
+        console.error('Failed to set config:', err)
+        return false
       }
-      
-      return true
-    } catch (err) {
-      console.error('Failed to set config:', err)
-      return false
-    }
-  }, [electronAPI, key])
+    },
+    [electronAPI, key]
+  )
 
   return {
     config,
@@ -153,7 +162,7 @@ export const useConfig = <T = any>(key?: string, defaultValue?: T) => {
     error,
     updateConfig,
     getConfig,
-    setConfig: setConfigValue
+    setConfig: setConfigValue,
   }
 }
 
@@ -166,23 +175,23 @@ export const useAppConfig = () => {
     window: {
       bounds: { x: 0, y: 0, width: 1200, height: 800 },
       isMaximized: false,
-      isFullScreen: false
+      isFullScreen: false,
     },
     preferences: {
       language: 'en',
       theme: 'light',
       autoUpdate: true,
-      notifications: true
+      notifications: true,
     },
     tabs: {
       defaultUrls: [],
       maxTabs: 10,
-      restoreOnStartup: true
+      restoreOnStartup: true,
     },
     network: {
       timeout: 30000,
-      retryCount: 3
-    }
+      retryCount: 3,
+    },
   })
 }
 
@@ -192,15 +201,21 @@ export const useAppConfig = () => {
 export const useUserPreferences = () => {
   const { config, updateConfig, isLoading } = useConfig<AppConfig['preferences']>('preferences')
 
-  const updateLanguage = useCallback(async (language: string) => {
-    if (!config) return false
-    return updateConfig({ ...config, language })
-  }, [config, updateConfig])
+  const updateLanguage = useCallback(
+    async (language: string) => {
+      if (!config) return false
+      return updateConfig({ ...config, language })
+    },
+    [config, updateConfig]
+  )
 
-  const updateTheme = useCallback(async (theme: 'light' | 'dark' | 'auto') => {
-    if (!config) return false
-    return updateConfig({ ...config, theme })
-  }, [config, updateConfig])
+  const updateTheme = useCallback(
+    async (theme: 'light' | 'dark' | 'auto') => {
+      if (!config) return false
+      return updateConfig({ ...config, theme })
+    },
+    [config, updateConfig]
+  )
 
   const toggleAutoUpdate = useCallback(async () => {
     if (!config) return false
@@ -218,6 +233,6 @@ export const useUserPreferences = () => {
     updateLanguage,
     updateTheme,
     toggleAutoUpdate,
-    toggleNotifications
+    toggleNotifications,
   }
 }

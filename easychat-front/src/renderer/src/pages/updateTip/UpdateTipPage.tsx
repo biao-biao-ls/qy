@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useElectronAPI, useIPC } from '../../hooks/useElectronAPI'
 
 interface UpdateWindowOptions {
@@ -19,7 +19,7 @@ const UpdateTipPage: React.FC = () => {
     message: '正在检查更新...',
     version: '',
     progress: 0,
-    forceUpdate: false
+    forceUpdate: false,
   })
   const [isLoading, setIsLoading] = useState(false)
 
@@ -51,7 +51,7 @@ const UpdateTipPage: React.FC = () => {
   // 处理确认按钮点击
   const handleConfirm = async () => {
     setIsLoading(true)
-    
+
     try {
       if (options.type === 'download-progress' && options.progress === 100) {
         // 下载完成，安装更新
@@ -92,7 +92,7 @@ const UpdateTipPage: React.FC = () => {
       // 强制更新时不允许关闭
       return
     }
-    
+
     try {
       await invoke('update-window:close')
     } catch (error) {
@@ -105,20 +105,20 @@ const UpdateTipPage: React.FC = () => {
     switch (options.type) {
       case 'force-update':
         return (
-          <svg viewBox="0 0 24 24" fill="currentColor" style={{ color: '#f56565' }}>
-            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+          <svg viewBox='0 0 24 24' fill='currentColor' style={{ color: '#f56565' }}>
+            <path d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z' />
           </svg>
         )
       case 'download-progress':
         return (
-          <svg viewBox="0 0 24 24" fill="currentColor" style={{ color: '#4299e1' }}>
-            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+          <svg viewBox='0 0 24 24' fill='currentColor' style={{ color: '#4299e1' }}>
+            <path d='M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z' />
           </svg>
         )
       default:
         return (
-          <svg viewBox="0 0 24 24" fill="currentColor" style={{ color: '#48bb78' }}>
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          <svg viewBox='0 0 24 24' fill='currentColor' style={{ color: '#48bb78' }}>
+            <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z' />
           </svg>
         )
     }
@@ -129,7 +129,7 @@ const UpdateTipPage: React.FC = () => {
     if (isLoading) {
       return (
         <>
-          <span className="loading"></span>
+          <span className='loading' />
           处理中...
         </>
       )
@@ -155,58 +155,41 @@ const UpdateTipPage: React.FC = () => {
 
   return (
     <div className={`update-container ${options.forceUpdate ? 'force-update' : ''}`}>
-      <div className="update-header">
-        <h3 className="update-title">{options.title}</h3>
+      <div className='update-header'>
+        <h3 className='update-title'>{options.title}</h3>
         {!options.forceUpdate && (
-          <button className="close-btn" onClick={handleClose} title="关闭">
+          <button className='close-btn' onClick={handleClose} title='关闭'>
             ×
           </button>
         )}
       </div>
 
-      <div className="update-content">
-        <div className="update-icon">
-          {getIcon()}
-        </div>
+      <div className='update-content'>
+        <div className='update-icon'>{getIcon()}</div>
 
-        <div className="update-message">
-          {options.message}
-        </div>
+        <div className='update-message'>{options.message}</div>
 
-        {options.version && (
-          <div className="update-version">
-            版本: {options.version}
-          </div>
-        )}
+        {options.version ? <div className='update-version'>版本: {options.version}</div> : null}
 
         {options.type === 'download-progress' && (
-          <div className="progress-container" style={{ display: 'block' }}>
-            <div className="progress-bar">
-              <div 
-                className="progress-fill" 
-                style={{ width: `${options.progress || 0}%` }}
-              ></div>
+          <div className='progress-container' style={{ display: 'block' }}>
+            <div className='progress-bar'>
+              <div className='progress-fill' style={{ width: `${options.progress || 0}%` }} />
             </div>
-            <div className="progress-text">
-              {options.progress || 0}%
-            </div>
+            <div className='progress-text'>{options.progress || 0}%</div>
           </div>
         )}
       </div>
 
-      <div className="update-actions">
+      <div className='update-actions'>
         {!options.forceUpdate && options.type !== 'download-progress' && (
-          <button 
-            className="btn btn-secondary" 
-            onClick={handleCancel}
-            disabled={isLoading}
-          >
+          <button className='btn btn-secondary' onClick={handleCancel} disabled={isLoading}>
             {getCancelText()}
           </button>
         )}
-        
-        <button 
-          className="btn btn-primary" 
+
+        <button
+          className='btn btn-primary'
           onClick={handleConfirm}
           disabled={isLoading || (options.type === 'download-progress' && options.progress !== 100)}
         >

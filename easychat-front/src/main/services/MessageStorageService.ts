@@ -34,12 +34,14 @@ export class MessageStorageService {
     this.config = {
       maxMessages: config.maxMessages || 1000,
       maxAge: config.maxAge || 7 * 24 * 60 * 60 * 1000, // 7天
-      storageDir: config.storageDir || path.join(app.getPath('userData'), 'messages')
+      storageDir: config.storageDir || path.join(app.getPath('userData'), 'messages'),
     }
-    
+
     this.storageFile = path.join(this.config.storageDir, 'messages.json')
-    
-    logger.info('MessageStorageService', 'constructor', '消息存储服务初始化', { config: this.config })
+
+    logger.info('MessageStorageService', 'constructor', '消息存储服务初始化', {
+      config: this.config,
+    })
   }
 
   /**
@@ -48,22 +50,21 @@ export class MessageStorageService {
   async initialize(): Promise<void> {
     try {
       logger.info('MessageStorageService', 'initialize', '初始化消息存储服务')
-      
+
       // 确保存储目录存在
       await this.ensureStorageDirectory()
-      
+
       // 加载现有消息
       await this.loadMessages()
-      
+
       // 清理过期消息
       await this.cleanupExpiredMessages()
-      
+
       this.isInitialized = true
-      
+
       logger.info('MessageStorageService', 'initialize', '消息存储服务初始化完成', {
-        messageCount: this.messages.size
+        messageCount: this.messages.size,
       })
-      
     } catch (error) {
       logger.error('MessageStorageService', 'initialize', '初始化失败', error)
       throw error
@@ -82,22 +83,21 @@ export class MessageStorageService {
       const storedMessage: StoredMessage = {
         ...message,
         storedAt: Date.now(),
-        delivered: false
+        delivered: false,
       }
 
       this.messages.set(message.id, storedMessage)
-      
+
       logger.debug('MessageStorageService', 'storeMessage', '消息已存储', {
         id: message.id,
-        title: message.title
+        title: message.title,
       })
 
       // 检查是否超过最大消息数量
       await this.enforceMessageLimit()
-      
+
       // 保存到文件
       await this.saveMessages()
-      
     } catch (error) {
       logger.error('MessageStorageService', 'storeMessage', '存储消息失败', error)
       throw error
@@ -113,7 +113,7 @@ export class MessageStorageService {
       if (message) {
         message.delivered = true
         await this.saveMessages()
-        
+
         logger.debug('MessageStorageService', 'markAsDelivered', '消息已标记为送达', { messageId })
       }
     } catch (error) {
@@ -131,7 +131,7 @@ export class MessageStorageService {
       }
 
       const undeliveredMessages: PushMessage[] = []
-      
+
       for (const message of this.messages.values()) {
         if (!message.delivered) {
           // 移除存储相关的字段
@@ -141,11 +141,10 @@ export class MessageStorageService {
       }
 
       logger.info('MessageStorageService', 'getUndeliveredMessages', '获取未送达消息', {
-        count: undeliveredMessages.length
+        count: undeliveredMessages.length,
       })
 
       return undeliveredMessages
-      
     } catch (error) {
       logger.error('MessageStorageService', 'getUndeliveredMessages', '获取未送达消息失败', error)
       return []
@@ -162,7 +161,7 @@ export class MessageStorageService {
       }
 
       const messages: PushMessage[] = []
-      
+
       for (const message of this.messages.values()) {
         const messageTime = message.timestamp.getTime()
         if (messageTime >= startTime && messageTime <= endTime) {
@@ -174,11 +173,10 @@ export class MessageStorageService {
       logger.debug('MessageStorageService', 'getMessagesByTimeRange', '获取时间范围内消息', {
         startTime: new Date(startTime).toISOString(),
         endTime: new Date(endTime).toISOString(),
-        count: messages.length
+        count: messages.length,
       })
 
       return messages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      
     } catch (error) {
       logger.error('MessageStorageService', 'getMessagesByTimeRange', '获取消息失败', error)
       return []
@@ -205,11 +203,10 @@ export class MessageStorageService {
 
       logger.debug('MessageStorageService', 'getRecentMessages', '获取最近消息', {
         limit,
-        count: messages.length
+        count: messages.length,
       })
 
       return messages
-      
     } catch (error) {
       logger.error('MessageStorageService', 'getRecentMessages', '获取最近消息失败', error)
       return []
@@ -237,7 +234,7 @@ export class MessageStorageService {
     try {
       this.messages.clear()
       await this.saveMessages()
-      
+
       logger.info('MessageStorageService', 'clearAllMessages', '所有消息已清空')
     } catch (error) {
       logger.error('MessageStorageService', 'clearAllMessages', '清空消息失败', error)
@@ -259,7 +256,7 @@ export class MessageStorageService {
       } else {
         undeliveredCount++
       }
-      
+
       if (now - message.storedAt > this.config.maxAge) {
         expiredCount++
       }
@@ -273,7 +270,7 @@ export class MessageStorageService {
       storageFile: this.storageFile,
       maxMessages: this.config.maxMessages,
       maxAge: this.config.maxAge,
-      isInitialized: this.isInitialized
+      isInitialized: this.isInitialized,
     }
   }
 
@@ -296,7 +293,7 @@ export class MessageStorageService {
     try {
       const data = await fs.readFile(this.storageFile, 'utf-8')
       const messagesArray: StoredMessage[] = JSON.parse(data)
-      
+
       this.messages.clear()
       for (const message of messagesArray) {
         // 确保 timestamp 是 Date 对象
@@ -305,11 +302,10 @@ export class MessageStorageService {
         }
         this.messages.set(message.id, message)
       }
-      
+
       logger.info('MessageStorageService', 'loadMessages', '消息加载完成', {
-        count: this.messages.size
+        count: this.messages.size,
       })
-      
     } catch (error) {
       if ((error as any).code === 'ENOENT') {
         // 文件不存在，创建空的消息存储
@@ -330,14 +326,13 @@ export class MessageStorageService {
     try {
       const messagesArray = Array.from(this.messages.values())
       const data = JSON.stringify(messagesArray, null, 2)
-      
+
       await fs.writeFile(this.storageFile, data, 'utf-8')
-      
+
       logger.debug('MessageStorageService', 'saveMessages', '消息已保存到文件', {
         count: messagesArray.length,
-        file: this.storageFile
+        file: this.storageFile,
       })
-      
     } catch (error) {
       logger.error('MessageStorageService', 'saveMessages', '保存消息失败', error)
       throw error
@@ -351,22 +346,21 @@ export class MessageStorageService {
     try {
       const now = Date.now()
       let cleanedCount = 0
-      
+
       for (const [id, message] of this.messages) {
         if (now - message.storedAt > this.config.maxAge) {
           this.messages.delete(id)
           cleanedCount++
         }
       }
-      
+
       if (cleanedCount > 0) {
         await this.saveMessages()
         logger.info('MessageStorageService', 'cleanupExpiredMessages', '清理过期消息', {
           cleanedCount,
-          remainingCount: this.messages.size
+          remainingCount: this.messages.size,
         })
       }
-      
     } catch (error) {
       logger.error('MessageStorageService', 'cleanupExpiredMessages', '清理过期消息失败', error)
     }
@@ -380,23 +374,23 @@ export class MessageStorageService {
       if (this.messages.size <= this.config.maxMessages) {
         return
       }
-      
+
       // 按存储时间排序，删除最旧的消息
-      const sortedMessages = Array.from(this.messages.entries())
-        .sort(([, a], [, b]) => a.storedAt - b.storedAt)
-      
+      const sortedMessages = Array.from(this.messages.entries()).sort(
+        ([, a], [, b]) => a.storedAt - b.storedAt
+      )
+
       const toDelete = sortedMessages.slice(0, this.messages.size - this.config.maxMessages)
-      
+
       for (const [id] of toDelete) {
         this.messages.delete(id)
       }
-      
+
       logger.info('MessageStorageService', 'enforceMessageLimit', '强制执行消息限制', {
         deletedCount: toDelete.length,
         remainingCount: this.messages.size,
-        maxMessages: this.config.maxMessages
+        maxMessages: this.config.maxMessages,
       })
-      
     } catch (error) {
       logger.error('MessageStorageService', 'enforceMessageLimit', '强制执行消息限制失败', error)
     }
@@ -408,16 +402,15 @@ export class MessageStorageService {
   async destroy(): Promise<void> {
     try {
       logger.info('MessageStorageService', 'destroy', '销毁消息存储服务')
-      
+
       if (this.isInitialized) {
         await this.saveMessages()
       }
-      
+
       this.messages.clear()
       this.isInitialized = false
-      
+
       logger.info('MessageStorageService', 'destroy', '消息存储服务已销毁')
-      
     } catch (error) {
       logger.error('MessageStorageService', 'destroy', '销毁服务失败', error)
     }

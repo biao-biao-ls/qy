@@ -3,9 +3,17 @@
  * 重构自 desktop-app，简化初始化逻辑，采用现代化架构
  */
 
-import { app, shell, BrowserWindow, ipcMain, globalShortcut, crashReporter, nativeImage } from 'electron'
+import {
+  BrowserWindow,
+  app,
+  crashReporter,
+  globalShortcut,
+  ipcMain,
+  nativeImage,
+  shell,
+} from 'electron'
 import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { autoUpdater } from 'electron-updater'
 
 // 导入自定义模块
@@ -13,7 +21,7 @@ import { WindowManager } from './managers/WindowManager'
 import { PushManager } from './managers/PushManager'
 import { UpdateManager } from './managers/UpdateManager'
 import { AppConfig } from './config/AppConfig'
-import { initLogger, mainLogger, errorLogger } from '../utils/logger'
+import { errorLogger, initLogger, mainLogger } from '../utils/logger'
 import { APP_NAME, APP_VERSION } from '../utils/constants'
 import { AppError, AppState } from '../types/app'
 import { WindowType } from '../types/window'
@@ -35,26 +43,26 @@ class Application {
     this.windowManager = WindowManager.getInstance()
     this.updateManager = UpdateManager.getInstance()
     this.appConfig = AppConfig.getInstance()
-    
+
     // 初始化推送管理器
     this.pushManager = new PushManager({
       websocket: {
         url: 'wss://your-websocket-server.com/ws', // 这里需要配置实际的 WebSocket 服务器地址
         reconnectInterval: 5000,
         maxReconnectAttempts: 5,
-        heartbeatInterval: 30000
+        heartbeatInterval: 30000,
       },
       notification: {
         maxConcurrent: 3,
         defaultTimeout: 5000,
-        soundEnabled: true
+        soundEnabled: true,
       },
       storage: {
         maxMessages: 1000,
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7天
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7天
       },
       autoReconnect: true,
-      offlineMessageDelivery: true
+      offlineMessageDelivery: true,
     })
   }
 
@@ -64,43 +72,43 @@ class Application {
   async initialize(): Promise<void> {
     try {
       mainLogger.info('开始初始化应用程序')
-      
+
       // 设置应用程序基本信息
       this.setupAppInfo()
-      
+
       // 初始化日志系统
       this.initializeLogging()
-      
+
       // 设置崩溃报告
       this.setupCrashReporter()
-      
+
       // 配置应用程序选项
       this.configureAppOptions()
-      
+
       // 处理单例锁
       await this.handleSingleInstance()
-      
+
       // 加载配置
       await this.loadConfiguration()
-      
+
       // 设置平台特定配置
       this.setupPlatformSpecific()
-      
+
       // 注册全局事件处理器
       this.registerGlobalHandlers()
-      
+
       // 设置自动更新
       this.setupAutoUpdater()
-      
+
       // 设置全局 IPC 处理器
       this.setupGlobalIpcHandlers()
-      
+
       // 初始化推送管理器
       await this.initializePushManager()
-      
+
       this.appState = AppState.READY
       this.isInitialized = true
-      
+
       mainLogger.info('应用程序初始化完成')
     } catch (error) {
       this.handleInitializationError(error as Error)
@@ -113,11 +121,11 @@ class Application {
    */
   private setupAppInfo(): void {
     electronApp.setAppUserModelId(`com.jlc.${APP_NAME.toLowerCase()}`)
-    
+
     // 设置用户数据路径
     const userDataPath = app.getPath('userData')
     app.setAppLogsPath(join(userDataPath, 'logs'))
-    
+
     mainLogger.info(`应用程序: ${APP_NAME} v${APP_VERSION}`)
     mainLogger.info(`用户数据路径: ${userDataPath}`)
     mainLogger.info(`平台: ${process.platform} ${process.arch}`)
@@ -148,8 +156,11 @@ class Application {
    */
   private configureAppOptions(): void {
     // 禁用密码管理功能
-    app.commandLine.appendSwitch('disable-features', 'PasswordManagerEnable,AutofillServerCommunication')
-    
+    app.commandLine.appendSwitch(
+      'disable-features',
+      'PasswordManagerEnable,AutofillServerCommunication'
+    )
+
     // 开发环境配置
     if (is.dev) {
       app.setAppUserModelId(process.execPath)
@@ -162,7 +173,7 @@ class Application {
    */
   private async handleSingleInstance(): Promise<void> {
     const gotTheLock = app.requestSingleInstanceLock()
-    
+
     if (!gotTheLock) {
       mainLogger.warn('应用程序已在运行，退出当前实例')
       app.quit()
@@ -205,11 +216,11 @@ class Application {
    */
   private registerGlobalHandlers(): void {
     // 全局异常处理
-    process.on('uncaughtException', (error) => {
+    process.on('uncaughtException', error => {
       this.handleUncaughtException(error)
     })
 
-    process.on('unhandledRejection', (reason) => {
+    process.on('unhandledRejection', reason => {
       this.handleUnhandledRejection(reason)
     })
 
@@ -222,14 +233,16 @@ class Application {
       this.handleActivate()
     })
 
-    app.on('will-quit', (event) => {
+    app.on('will-quit', event => {
       event.preventDefault()
-      this.handleWillQuit().then(() => {
-        app.exit()
-      }).catch((error) => {
-        mainLogger.error('应用退出清理失败', error)
-        app.exit(1)
-      })
+      this.handleWillQuit()
+        .then(() => {
+          app.exit()
+        })
+        .catch(error => {
+          mainLogger.error('应用退出清理失败', error)
+          app.exit(1)
+        })
     })
 
     // 协议处理
@@ -240,7 +253,7 @@ class Application {
     // 浏览器窗口创建事件
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)
-      
+
       // 设置开发者工具快捷键（在所有环境中都可用）
       // 注册 F12 快捷键打开开发者工具
       window.webContents.on('before-input-event', (event, input) => {
@@ -262,7 +275,7 @@ class Application {
           }
         }
       })
-      
+
       mainLogger.info('开发者工具快捷键已注册 (F12, Ctrl+Shift+I)')
     })
 
@@ -293,7 +306,7 @@ class Application {
    */
   private setupGlobalIpcHandlers(): void {
     mainLogger.info('开始设置全局 IPC 处理器')
-    
+
     // 应用信息
     ipcMain.handle('app:getVersion', () => {
       mainLogger.debug('IPC: app:getVersion called')
@@ -305,7 +318,7 @@ class Application {
         name: app.getName(),
         version: app.getVersion(),
         platform: process.platform,
-        arch: process.arch
+        arch: process.arch,
       }
     })
 
@@ -327,7 +340,7 @@ class Application {
     ipcMain.handle('get-user-info', () => {
       return {
         username: 'User', // 这里可以从配置中获取实际的用户信息
-        isLoggedIn: true
+        isLoggedIn: true,
       }
     })
 
@@ -456,12 +469,12 @@ class Application {
   private async initializePushManager(): Promise<void> {
     try {
       mainLogger.info('初始化推送管理器')
-      
+
       await this.pushManager.initialize()
-      
+
       // 设置推送事件监听器
       this.setupPushEventListeners()
-      
+
       mainLogger.info('推送管理器初始化完成')
     } catch (error) {
       mainLogger.error('推送管理器初始化失败', error)
@@ -478,27 +491,27 @@ class Application {
       this.broadcastToAllWindows('push:connected')
     })
 
-    this.pushManager.on('disconnected', (data) => {
+    this.pushManager.on('disconnected', data => {
       mainLogger.info('推送服务已断开', data)
       this.broadcastToAllWindows('push:disconnected', data)
     })
 
-    this.pushManager.on('connectionStateChanged', (state) => {
+    this.pushManager.on('connectionStateChanged', state => {
       mainLogger.debug('推送连接状态变更', state)
       this.broadcastToAllWindows('push:connection-state-changed', state)
     })
 
-    this.pushManager.on('notificationShown', (data) => {
+    this.pushManager.on('notificationShown', data => {
       mainLogger.debug('通知已显示', data)
       this.broadcastToAllWindows('push:notification-shown', data)
     })
 
-    this.pushManager.on('notificationClicked', (data) => {
+    this.pushManager.on('notificationClicked', data => {
       mainLogger.info('通知被点击', data)
       this.broadcastToAllWindows('push:notification-clicked', data)
     })
 
-    this.pushManager.on('error', (error) => {
+    this.pushManager.on('error', error => {
       mainLogger.error('推送服务错误', error)
       this.broadcastToAllWindows('push:error', { message: error.message })
     })
@@ -546,7 +559,7 @@ class Application {
     ipcMain.handle('push:getStatus', () => {
       return {
         connectionState: this.pushManager.getConnectionState(),
-        statistics: this.pushManager.getStatistics()
+        statistics: this.pushManager.getStatistics(),
       }
     })
 
@@ -596,7 +609,7 @@ class Application {
     })
 
     // 开发者工具控制
-    ipcMain.handle('dev:toggleDevTools', (event) => {
+    ipcMain.handle('dev:toggleDevTools', event => {
       const webContents = event.sender
       if (webContents.isDevToolsOpened()) {
         webContents.closeDevTools()
@@ -607,19 +620,19 @@ class Application {
       }
     })
 
-    ipcMain.handle('dev:openDevTools', (event) => {
+    ipcMain.handle('dev:openDevTools', event => {
       const webContents = event.sender
       webContents.openDevTools({ mode: 'detach' })
       return { success: true }
     })
 
-    ipcMain.handle('dev:closeDevTools', (event) => {
+    ipcMain.handle('dev:closeDevTools', event => {
       const webContents = event.sender
       webContents.closeDevTools()
       return { success: true }
     })
 
-    ipcMain.handle('dev:isDevToolsOpened', (event) => {
+    ipcMain.handle('dev:isDevToolsOpened', event => {
       const webContents = event.sender
       return { isOpened: webContents.isDevToolsOpened() }
     })
@@ -780,26 +793,26 @@ class Application {
 
     try {
       this.appState = AppState.RUNNING
-      
+
       // 创建主窗口
       const mainWindow = await this.windowManager.createMainWindow()
-      
+
       // 初始化更新管理器
       try {
         await this.updateManager.initialize()
-        
+
         // 设置更新管理器的主窗口引用
         this.updateManager.setMainWindow(mainWindow)
-        
+
         // 启动自动更新检查
         this.updateManager.startAutoCheck()
-        
+
         mainLogger.info('更新管理器初始化完成')
       } catch (error) {
         mainLogger.error('更新管理器初始化失败，跳过更新功能', error)
         // 更新功能初始化失败不应该阻止应用启动
       }
-      
+
       // 启动推送服务（可选，也可以由用户手动启动）
       try {
         await this.pushManager.start()
@@ -807,7 +820,7 @@ class Application {
       } catch (error) {
         mainLogger.warn('推送服务启动失败，将在后续重试', error)
       }
-      
+
       mainLogger.info('应用程序启动完成')
     } catch (error) {
       this.handleStartupError(error as Error)
@@ -820,7 +833,7 @@ class Application {
    */
   private setupWebContents(contents: Electron.WebContents): void {
     // 设置窗口打开处理器
-    contents.setWindowOpenHandler((details) => {
+    contents.setWindowOpenHandler(details => {
       shell.openExternal(details.url)
       return { action: 'deny' }
     })
@@ -841,7 +854,7 @@ class Application {
       // 发送登录成功消息
       mainLogger.info(`${title} 登录成功`)
     }
-    
+
     if (title === 'jlcone-logout') {
       contents.close()
       // 处理登出
@@ -854,11 +867,11 @@ class Application {
    */
   private handleDeepLink(url: string): void {
     mainLogger.info(`收到深度链接: ${url}`)
-    
+
     try {
       const parsedUrl = new URL(url)
       const action = parsedUrl.searchParams.get('action')
-      
+
       switch (action) {
         case 'open-settings':
           this.windowManager.createSettingWindow()
@@ -895,7 +908,7 @@ class Application {
    */
   private async handleWillQuit(): Promise<void> {
     globalShortcut.unregisterAll()
-    
+
     // 清理推送管理器
     try {
       await this.pushManager.destroy()
@@ -911,7 +924,7 @@ class Application {
     } catch (error) {
       mainLogger.error('清理更新管理器失败', error)
     }
-    
+
     this.appState = AppState.CLOSED
     mainLogger.info('应用程序即将退出')
   }
@@ -925,9 +938,9 @@ class Application {
       type: 'system',
       timestamp: new Date(),
     }
-    
+
     errorLogger.error('未捕获异常', appError)
-    
+
     // 在生产环境中，可能需要重启应用或显示错误对话框
     if (!is.dev) {
       app.relaunch()
@@ -951,7 +964,7 @@ class Application {
       type: 'system',
       timestamp: new Date(),
     }
-    
+
     errorLogger.error('应用程序初始化失败', appError)
     app.exit(1)
   }
@@ -965,7 +978,7 @@ class Application {
       type: 'system',
       timestamp: new Date(),
     }
-    
+
     errorLogger.error('应用程序启动失败', appError)
     app.exit(1)
   }

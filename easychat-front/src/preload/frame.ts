@@ -11,7 +11,7 @@ const parseKey = (evt: KeyboardEvent): string => {
   if (evt.ctrlKey) keyStr += 'ctrl+'
   if (evt.shiftKey) keyStr += 'shift+'
   if (evt.altKey) keyStr += 'alt+'
-  
+
   if (['Control', 'Alt', 'Shift'].includes(evt.key)) {
     return keyStr.substring(0, keyStr.length - 1)
   }
@@ -26,7 +26,7 @@ const handleError = (error: Error, context: string): void => {
     message: error.message,
     stack: error.stack,
     url: window.location.href,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   })
 }
 
@@ -55,49 +55,59 @@ const tabsAPI = {
   create: (url: string): void => ipcRenderer.send('frame:tab-create', url),
   close: (tabId: string): void => ipcRenderer.send('frame:tab-close', tabId),
   activate: (tabId: string): void => ipcRenderer.send('frame:tab-activate', tabId),
-  move: (tabId: string, newIndex: number): void => 
+  move: (tabId: string, newIndex: number): void =>
     ipcRenderer.send('frame:tab-move', tabId, newIndex),
 }
 
 // 事件处理 API
 const eventHandleAPI = {
-  handleContextMenu: (topUrl: string, frameUrl: string, anchorUrl: string, selectionStr: string): void => {
+  handleContextMenu: (
+    topUrl: string,
+    frameUrl: string,
+    anchorUrl: string,
+    selectionStr: string
+  ): void => {
     if (window.parent && (window.parent as any).__assitEventHandle__) {
-      ;(window.parent as any).__assitEventHandle__.handleContextMenu(topUrl, frameUrl, anchorUrl, selectionStr)
+      ;(window.parent as any).__assitEventHandle__.handleContextMenu(
+        topUrl,
+        frameUrl,
+        anchorUrl,
+        selectionStr
+      )
     }
   },
-  
+
   handleKeydown: (keyStr: string): void => {
     if (window.parent && (window.parent as any).__assitEventHandle__) {
       ;(window.parent as any).__assitEventHandle__.handleKeydown(keyStr)
     }
   },
-  
+
   handleZoomIn: (zoomIn: boolean): void => {
     if (window.parent && (window.parent as any).__assitEventHandle__) {
       ;(window.parent as any).__assitEventHandle__.handleZoomIn(zoomIn)
     }
   },
-  
+
   handleCtrlDown: (keyDown: boolean): void => {
     if (window.parent && (window.parent as any).__assitEventHandle__) {
       ;(window.parent as any).__assitEventHandle__.handleCtrlDown(keyDown)
     }
   },
-  
+
   handlePageFailed: (): void => {
     if (window.parent && (window.parent as any).__assitEventHandle__) {
       ;(window.parent as any).__assitEventHandle__.handlePageFailed()
     }
   },
-  
+
   handleLog,
-  
+
   onMainMsg: (listener: (event: any, ...args: any[]) => void): void => {
     if (window.parent && (window.parent as any).__assitEventHandle__) {
       ;(window.parent as any).__assitEventHandle__.onMainMsg(listener)
     }
-  }
+  },
 }
 
 // 事件监听 API
@@ -107,18 +117,18 @@ const eventAPI = {
     ipcRenderer.on('frame:tab-created', handler)
     return () => ipcRenderer.removeListener('frame:tab-created', handler)
   },
-  
+
   onTabClosed: (callback: (tabId: string) => void): (() => void) => {
     const handler = (_: any, tabId: string): void => callback(tabId)
     ipcRenderer.on('frame:tab-closed', handler)
     return () => ipcRenderer.removeListener('frame:tab-closed', handler)
   },
-  
+
   onTabActivated: (callback: (tabId: string) => void): (() => void) => {
     const handler = (_: any, tabId: string): void => callback(tabId)
     ipcRenderer.on('frame:tab-activated', handler)
     return () => ipcRenderer.removeListener('frame:tab-activated', handler)
-  }
+  },
 }
 
 // 整合的框架 API
@@ -126,7 +136,7 @@ const frameAPI = {
   window: windowAPI,
   tabs: tabsAPI,
   events: eventAPI,
-  eventHandle: eventHandleAPI
+  eventHandle: eventHandleAPI,
 }
 
 // 尝试从父窗口继承 API
@@ -136,11 +146,21 @@ const inheritFromParent = (): void => {
       ;(window as any).appClient = (window.parent as any).appClient
     }
 
-    if (!(window as any).JLC_PC_Assit_Client_Information && window.parent && (window.parent as any).JLC_PC_Assit_Client_Information) {
-      ;(window as any).JLC_PC_Assit_Client_Information = (window.parent as any).JLC_PC_Assit_Client_Information
+    if (
+      !(window as any).JLC_PC_Assit_Client_Information &&
+      window.parent &&
+      (window.parent as any).JLC_PC_Assit_Client_Information
+    ) {
+      ;(window as any).JLC_PC_Assit_Client_Information = (
+        window.parent as any
+      ).JLC_PC_Assit_Client_Information
     }
 
-    if (!(window as any).__assitEventHandle__ && window.parent && (window.parent as any).__assitEventHandle__) {
+    if (
+      !(window as any).__assitEventHandle__ &&
+      window.parent &&
+      (window.parent as any).__assitEventHandle__
+    ) {
       ;(window as any).__assitEventHandle__ = (window.parent as any).__assitEventHandle__
     }
   } catch (error) {
@@ -151,17 +171,17 @@ const inheritFromParent = (): void => {
 // 设置事件监听器
 const setupEventListeners = (): void => {
   // 右键菜单事件
-  window.addEventListener('contextmenu', (e) => {
+  window.addEventListener('contextmenu', e => {
     try {
       const isCanvas = (e.composedPath() || []).some((item: any) => {
         return item.nodeName === 'CANVAS'
       })
-      
+
       if (isCanvas) return
-      
+
       const topUrl = window.parent?.location?.href || ''
       let anchorUrl = ''
-      
+
       // 查找链接元素
       for (const element of e.composedPath() as Element[]) {
         if (element.nodeName === 'A') {
@@ -169,27 +189,22 @@ const setupEventListeners = (): void => {
           break
         }
       }
-      
+
       const selectionStr = window.getSelection()?.toString() || ''
-      
-      eventHandleAPI.handleContextMenu(
-        topUrl,
-        window.location.href,
-        anchorUrl,
-        selectionStr
-      )
+
+      eventHandleAPI.handleContextMenu(topUrl, window.location.href, anchorUrl, selectionStr)
     } catch (error) {
       handleError(error as Error, 'Context Menu')
     }
   })
 
   // 键盘事件
-  window.addEventListener('keydown', (evt) => {
+  window.addEventListener('keydown', evt => {
     try {
       if (evt.ctrlKey) {
         eventHandleAPI.handleCtrlDown(true)
       }
-      
+
       const keyStr = parseKey(evt)
       eventHandleAPI.handleKeydown(keyStr)
     } catch (error) {
@@ -197,7 +212,7 @@ const setupEventListeners = (): void => {
     }
   })
 
-  window.addEventListener('keyup', (evt) => {
+  window.addEventListener('keyup', evt => {
     try {
       if (!evt.ctrlKey) {
         eventHandleAPI.handleCtrlDown(false)
@@ -208,7 +223,7 @@ const setupEventListeners = (): void => {
   })
 
   // 鼠标滚轮事件
-  window.addEventListener('wheel', (event) => {
+  window.addEventListener('wheel', event => {
     try {
       if (event.deltaY > 0) {
         eventHandleAPI.handleZoomIn(false) // 缩小
@@ -233,10 +248,10 @@ const checkPageError = (): void => {
 const initialize = (): void => {
   inheritFromParent()
   setupEventListeners()
-  
+
   // 定期检查页面错误
   setInterval(checkPageError, 30000)
-  
+
   // 监听主进程消息
   if (window.parent && (window.parent as any).__assitEventHandle__) {
     eventHandleAPI.onMainMsg((event, msg) => {
@@ -247,16 +262,16 @@ const initialize = (): void => {
           if (active instanceof HTMLInputElement) {
             const lastValue = active.value
             active.value = msg.data
-            
+
             const inputEvent = new Event('input', { bubbles: true })
             // React 兼容性处理
             ;(inputEvent as any).simulated = true
-            
+
             const tracker = (active as any)._valueTracker
             if (tracker) {
               tracker.setValue(lastValue)
             }
-            
+
             active.dispatchEvent(inputEvent)
           }
         }

@@ -31,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
     // 记录错误信息
     console.error('ErrorBoundary 捕获到错误:', error, errorInfo)
     this.setState({ error, errorInfo })
-    
+
     // 调用外部错误处理函数
     if (this.props.onError) {
       this.props.onError(error, errorInfo)
@@ -50,38 +50,38 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="error-boundary">
-          <div className="error-boundary__content">
-            <h3 className="error-boundary__title">出现了一个错误</h3>
-            <p className="error-boundary__message">
+        <div className='error-boundary'>
+          <div className='error-boundary__content'>
+            <h3 className='error-boundary__title'>出现了一个错误</h3>
+            <p className='error-boundary__message'>
               抱歉，应用遇到了一个意外错误。您可以尝试重新加载或联系技术支持。
             </p>
-            
-            <details className="error-boundary__details">
+
+            <details className='error-boundary__details'>
               <summary>错误详情</summary>
-              <pre className="error-boundary__stack">
-                {this.state.error && this.state.error.toString()}
+              <pre className='error-boundary__stack'>
+                {this.state.error ? this.state.error.toString() : null}
                 {this.state.errorInfo?.componentStack}
               </pre>
             </details>
-            
-            <div className="error-boundary__actions">
-              <button 
-                className="error-boundary__button error-boundary__button--primary"
+
+            <div className='error-boundary__actions'>
+              <button
+                className='error-boundary__button error-boundary__button--primary'
                 onClick={this.handleRetry}
               >
                 重试
               </button>
-              <button 
-                className="error-boundary__button error-boundary__button--secondary"
+              <button
+                className='error-boundary__button error-boundary__button--secondary'
                 onClick={() => window.location.reload()}
               >
                 重新加载页面
               </button>
             </div>
           </div>
-          
-          <style jsx="true">{`
+
+          <style jsx='true'>{`
             .error-boundary {
               display: flex;
               align-items: center;
@@ -94,35 +94,35 @@ export class ErrorBoundary extends Component<Props, State> {
               margin: 10px;
               color: #856404;
             }
-            
+
             .error-boundary__content {
               max-width: 500px;
               text-align: center;
             }
-            
+
             .error-boundary__title {
               margin: 0 0 16px 0;
               font-size: 18px;
               font-weight: 600;
               color: #721c24;
             }
-            
+
             .error-boundary__message {
               margin: 0 0 20px 0;
               line-height: 1.5;
             }
-            
+
             .error-boundary__details {
               margin: 20px 0;
               text-align: left;
             }
-            
+
             .error-boundary__details summary {
               cursor: pointer;
               font-weight: 500;
               margin-bottom: 8px;
             }
-            
+
             .error-boundary__stack {
               background: #f8f9fa;
               border: 1px solid #dee2e6;
@@ -133,13 +133,13 @@ export class ErrorBoundary extends Component<Props, State> {
               overflow-x: auto;
               max-height: 200px;
             }
-            
+
             .error-boundary__actions {
               display: flex;
               gap: 12px;
               justify-content: center;
             }
-            
+
             .error-boundary__button {
               padding: 8px 16px;
               border: none;
@@ -149,21 +149,21 @@ export class ErrorBoundary extends Component<Props, State> {
               font-weight: 500;
               transition: all 0.2s ease;
             }
-            
+
             .error-boundary__button--primary {
               background: #007bff;
               color: white;
             }
-            
+
             .error-boundary__button--primary:hover {
               background: #0056b3;
             }
-            
+
             .error-boundary__button--secondary {
               background: #6c757d;
               color: white;
             }
-            
+
             .error-boundary__button--secondary:hover {
               background: #545b62;
             }
@@ -195,13 +195,13 @@ export const useErrorHandler = () => {
   // 在开发环境下，将错误处理函数添加到 window 对象
   React.useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      (window as any).__handleError = handleError
+      ;(window as any).__handleError = handleError
     }
   }, [handleError])
 
   return {
     error,
     resetError,
-    handleError
+    handleError,
   }
 }

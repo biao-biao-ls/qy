@@ -9,10 +9,12 @@
 ### 1. 主进程配置
 
 **文件：** `src/utils/constants.ts`
+
 - 在默认窗口配置中启用了 `devTools: true`
 - 确保所有窗口都支持开发者工具
 
 **文件：** `src/main/index.ts`
+
 - 添加了 F12 和 Ctrl+Shift+I (Cmd+Option+I) 快捷键支持
 - 在 `browser-window-created` 事件中注册快捷键监听器
 - 添加了开发者工具相关的 IPC 处理器：
@@ -24,17 +26,20 @@
 ### 2. 预加载脚本更新
 
 **文件：** `src/preload/index.ts`
+
 - 添加了 `dev` API 到 `electronAPI` 对象
 - 暴露开发者工具控制方法给渲染进程
 
 ### 3. 类型定义更新
 
 **文件：** `src/types/ipc.ts`
+
 - 在 `ElectronAPI` 接口中添加了 `dev` 属性
 - 添加了 `ipc` 属性以保持向后兼容
 - 更新了 `window` 和 `tabs` 接口以匹配实际使用
 
 **文件：** `src/renderer/src/hooks/useElectronAPI.ts`
+
 - 简化了 hook 实现，直接使用 `window.electronAPI`
 - 添加了 `dev` 接口支持
 - 修复了类型兼容性问题
@@ -42,6 +47,7 @@
 ### 4. 开发者工具组件
 
 **文件：** `src/renderer/src/components/DevTools.tsx`
+
 - 创建了专用的开发者工具控制组件
 - 提供了图形化的开发者工具控制界面
 - 支持快捷键操作（F12, Ctrl+Shift+I）
@@ -51,17 +57,20 @@
 ### 5. 全局快捷键支持
 
 **文件：** `src/renderer/src/App.tsx`
+
 - 在主应用组件中添加了全局快捷键监听
 - 支持 F12 和 Ctrl+Shift+I (Cmd+Option+I) 快捷键
 - 确保在任何页面都能使用快捷键
 
 **文件：** `src/renderer/src/pages/setting/SettingPage.tsx`
+
 - 在设置页面中集成了 DevTools 组件
 - 替换了原有的简单按钮实现
 
 ### 6. 样式修复
 
 **修复了所有组件中的 styled-jsx 属性问题：**
+
 - 将 `<style jsx>` 改为 `<style jsx="true">`
 - 涉及的文件：
   - LoadingSpinner.tsx
@@ -81,11 +90,13 @@
 ## 功能特性
 
 ### 快捷键支持
+
 - **F12** - 切换开发者工具
 - **Ctrl+Shift+I** (Windows/Linux) - 切换开发者工具
 - **Cmd+Option+I** (macOS) - 切换开发者工具
 
 ### API 接口
+
 ```typescript
 // 渲染进程中使用
 const electronAPI = useElectronAPI()
@@ -104,11 +115,12 @@ const { isOpened } = await electronAPI.dev?.isDevToolsOpened()
 ```
 
 ### 组件使用
+
 ```tsx
 import { DevTools } from '../components/DevTools'
 
 // 在任何组件中使用
-<DevTools />
+;<DevTools />
 ```
 
 ## 开发环境特性
@@ -134,11 +146,13 @@ import { DevTools } from '../components/DevTools'
 ## 使用说明
 
 ### 开发者
+
 1. 按 F12 或 Ctrl+Shift+I 打开/关闭开发者工具
 2. 在设置页面中使用图形化控制界面
 3. 通过 API 编程控制开发者工具
 
 ### 用户
+
 1. 在设置页面的"开发者选项"部分找到开发者工具控制
 2. 使用快捷键快速访问开发者工具
 3. 开发者工具状态会实时显示

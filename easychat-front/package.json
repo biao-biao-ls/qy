@@ -35,7 +35,20 @@
     "package:linux-rpm": "npm run build && electron-builder --linux --target rpm",
     "package:all": "npm run build && electron-builder --mac --win --linux",
     "dist": "npm run package:all",
-    "dist:dir": "npm run build:unpack"
+    "dist:dir": "npm run build:unpack",
+    "dev:tools": "node scripts/dev-tools.js",
+    "dev:monitor": "node scripts/dev-monitor.js",
+    "dev:debug": "cross-env NODE_ENV=development ELECTRON_IS_DEV=1 electron-vite dev --inspect",
+    "dev:clean": "npm run clean && npm run dev",
+    "check": "npm run typecheck && npm run lint",
+    "check:quick": "node scripts/quality-check.js quick",
+    "check:all": "node scripts/quality-check.js all",
+    "fix": "npm run format && eslint --fix .",
+    "fix:auto": "node scripts/quality-check.js fix",
+    "analyze": "npm run build:analyze",
+    "report": "node scripts/quality-report.js",
+    "prepare": "husky install",
+    "prepare": "husky"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
@@ -53,6 +66,8 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.0.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
@@ -76,6 +91,8 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.4",
     "postcss": "^8.5.1",
     "prettier": "^3.5.3",
     "rimraf": "^6.0.1",
@@ -108,7 +125,10 @@
       {
         "from": "resources",
         "to": "resources",
-        "filter": ["**/*", "!**/*.md"]
+        "filter": [
+          "**/*",
+          "!**/*.md"
+        ]
       }
     ],
     "compression": "maximum",
@@ -128,7 +148,10 @@
       "include": "build/installer.nsh",
       "warningsAsErrors": false,
       "displayLanguageSelector": true,
-      "installerLanguages": ["en_US", "zh_CN"],
+      "installerLanguages": [
+        "en_US",
+        "zh_CN"
+      ],
       "language": "2052"
     },
     "win": {
@@ -136,11 +159,16 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "ia32"]
+          "arch": [
+            "x64",
+            "ia32"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "publisherName": "Jialichuang(Hong Kong) co., Limited",
@@ -175,11 +203,17 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "resources/YourAppIcon.icns",
@@ -194,19 +228,27 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "deb",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "rpm",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "tar.gz",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "resources/jlcAssistant512.png",
@@ -246,5 +288,27 @@
     "beforeBuild": "scripts/beforeBuild.js",
     "afterSign": "scripts/notarize.js",
     "afterPack": "scripts/afterPack.js"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ],
+    "*.{css,scss,less}": [
+      "prettier --write"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
   }
 }

@@ -13,20 +13,20 @@ interface SimpleElectronAPI {
     setTitle(title: string): void
     isMaximized(): Promise<boolean>
   }
-  
+
   tabs: {
     create(options: any): Promise<any>
     remove(tabId: string): Promise<void>
     switch(tabId: string): Promise<void>
     getAll(): Promise<any[]>
   }
-  
+
   config: {
     get<T>(key: string): Promise<T>
     set<T>(key: string, value: T): Promise<void>
     onChange(callback: (key: string, value: any) => void): void
   }
-  
+
   ipc: {
     send(channel: string, ...args: any[]): void
     invoke(channel: string, ...args: any[]): Promise<any>
@@ -48,7 +48,7 @@ interface SimpleElectronAPI {
 export const useElectronAPI = (): SimpleElectronAPI => {
   // 直接返回 window.electronAPI，它已经在预加载脚本中正确设置了
   const api = (window as any).electronAPI as SimpleElectronAPI
-  
+
   if (!api) {
     throw new Error('Electron API not available')
   }
@@ -74,15 +74,18 @@ export const useWindowControls = () => {
     electronAPI.window.close()
   }, [electronAPI])
 
-  const setTitle = useCallback((title: string) => {
-    electronAPI.window.setTitle(title)
-  }, [electronAPI])
+  const setTitle = useCallback(
+    (title: string) => {
+      electronAPI.window.setTitle(title)
+    },
+    [electronAPI]
+  )
 
   return {
     minimize,
     maximize,
     close,
-    setTitle
+    setTitle,
   }
 }
 
@@ -92,21 +95,30 @@ export const useWindowControls = () => {
 export const useIPC = () => {
   const electronAPI = useElectronAPI()
 
-  const send = useCallback((channel: string, ...args: any[]) => {
-    electronAPI.ipc?.send(channel, ...args)
-  }, [electronAPI])
+  const send = useCallback(
+    (channel: string, ...args: any[]) => {
+      electronAPI.ipc?.send(channel, ...args)
+    },
+    [electronAPI]
+  )
 
-  const invoke = useCallback((channel: string, ...args: any[]) => {
-    return electronAPI.ipc?.invoke(channel, ...args)
-  }, [electronAPI])
+  const invoke = useCallback(
+    (channel: string, ...args: any[]) => {
+      return electronAPI.ipc?.invoke(channel, ...args)
+    },
+    [electronAPI]
+  )
 
-  const on = useCallback((channel: string, callback: (...args: any[]) => void) => {
-    return electronAPI.ipc?.on(channel, callback) || (() => {})
-  }, [electronAPI])
+  const on = useCallback(
+    (channel: string, callback: (...args: any[]) => void) => {
+      return electronAPI.ipc?.on(channel, callback) || (() => {})
+    },
+    [electronAPI]
+  )
 
   return {
     send,
     invoke,
-    on
+    on,
   }
 }

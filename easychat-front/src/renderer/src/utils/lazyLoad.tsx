@@ -2,8 +2,8 @@
  * 组件懒加载工具
  * 提供代码分割和懒加载功能
  */
-import React, { Suspense, ComponentType, LazyExoticComponent } from 'react'
-import { LoadingSpinner, FullScreenLoading } from '../components/LoadingSpinner'
+import React, { ComponentType, LazyExoticComponent, Suspense } from 'react'
+import { FullScreenLoading, LoadingSpinner } from '../components/LoadingSpinner'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 
 /**
@@ -34,7 +34,7 @@ export function createLazyComponent<T extends ComponentType<any>>(
     errorFallback: CustomErrorFallback,
     delay = 0,
     fullScreen = false,
-    loadingText = '加载中...'
+    loadingText = '加载中...',
   } = options
 
   // 创建懒加载组件
@@ -42,10 +42,12 @@ export function createLazyComponent<T extends ComponentType<any>>(
     if (delay > 0) {
       return new Promise<{ default: T }>(resolve => {
         setTimeout(() => {
-          importFn().then(resolve).catch(() => {
-            // 处理加载失败的情况
-            resolve({ default: (() => <div>加载失败</div>) as any })
-          })
+          importFn()
+            .then(resolve)
+            .catch(() => {
+              // 处理加载失败的情况
+              resolve({ default: (() => <div>加载失败</div>) as any })
+            })
         }, delay)
       })
     }
@@ -57,19 +59,21 @@ export function createLazyComponent<T extends ComponentType<any>>(
     if (CustomFallback) {
       return <CustomFallback />
     }
-    
+
     if (fullScreen) {
       return <FullScreenLoading message={loadingText} />
     }
-    
+
     return (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        padding: '20px' 
-      }}>
-        <LoadingSpinner size="medium" />
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+        }}
+      >
+        <LoadingSpinner size='medium' />
         <span style={{ marginLeft: '8px' }}>{loadingText}</span>
       </div>
     )
@@ -80,16 +84,18 @@ export function createLazyComponent<T extends ComponentType<any>>(
     if (CustomErrorFallback) {
       return <CustomErrorFallback error={error} retry={retry} />
     }
-    
+
     return (
-      <div style={{ 
-        padding: '20px', 
-        textAlign: 'center',
-        color: '#d32f2f'
-      }}>
+      <div
+        style={{
+          padding: '20px',
+          textAlign: 'center',
+          color: '#d32f2f',
+        }}
+      >
         <h3>组件加载失败</h3>
         <p>{error.message}</p>
-        <button 
+        <button
           onClick={retry}
           style={{
             padding: '8px 16px',
@@ -97,7 +103,7 @@ export function createLazyComponent<T extends ComponentType<any>>(
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
         >
           重试
@@ -107,9 +113,9 @@ export function createLazyComponent<T extends ComponentType<any>>(
   }
 
   // 包装组件
-  const WrappedComponent: React.FC<any> = (props) => {
+  const WrappedComponent: React.FC<any> = props => {
     const [retryKey, setRetryKey] = React.useState(0)
-    
+
     const handleRetry = React.useCallback(() => {
       setRetryKey(prev => prev + 1)
     }, [])
@@ -134,9 +140,7 @@ export function createLazyComponent<T extends ComponentType<any>>(
 /**
  * 预加载组件
  */
-export function preloadComponent(
-  lazyComponent: any
-): Promise<void> {
+export function preloadComponent(lazyComponent: any): Promise<void> {
   // 简化的预加载实现
   return Promise.resolve()
 }
@@ -144,9 +148,7 @@ export function preloadComponent(
 /**
  * 批量预加载组件
  */
-export function preloadComponents(
-  lazyComponents: any[]
-): Promise<void[]> {
+export function preloadComponents(lazyComponents: any[]): Promise<void[]> {
   return Promise.all(lazyComponents.map(preloadComponent))
 }
 
@@ -160,7 +162,7 @@ export function createLazyRoute(
   return createLazyComponent(importFn, {
     fullScreen: true,
     loadingText: '页面加载中...',
-    ...options
+    ...options,
   })
 }
 
@@ -174,7 +176,7 @@ export function createLazyModule(
   return createLazyComponent(importFn, {
     fullScreen: false,
     loadingText: '模块加载中...',
-    ...options
+    ...options,
   })
 }
 
@@ -215,7 +217,7 @@ export function useLazyComponent<T extends ComponentType<any>>(
     Component,
     loading,
     error,
-    retry
+    retry,
   }
 }
 
@@ -244,7 +246,7 @@ export function useConditionalLazyComponent<T extends ComponentType<any>>(
         setLoading(true)
         setError(null)
         const module = await importFn()
-        
+
         if (!cancelled) {
           setComponent(() => module.default)
         }
@@ -270,7 +272,7 @@ export function useConditionalLazyComponent<T extends ComponentType<any>>(
     if (condition) {
       setError(null)
       setLoading(true)
-      
+
       importFn()
         .then(module => {
           setComponent(() => module.default)
@@ -288,6 +290,6 @@ export function useConditionalLazyComponent<T extends ComponentType<any>>(
     Component,
     loading,
     error,
-    retry
+    retry,
   }
 }

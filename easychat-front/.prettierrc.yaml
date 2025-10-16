@@ -8,3 +8,8 @@ bracketSpacing: true
 bracketSameLine: false
 arrowParens: avoid
 endOfLine: lf
+quoteProps: as-needed
+jsxSingleQuote: true
+proseWrap: preserve
+htmlWhitespaceSensitivity: css
+embeddedLanguageFormatting: auto

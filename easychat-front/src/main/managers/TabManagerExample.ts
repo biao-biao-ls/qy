@@ -199,12 +199,16 @@ export class TabManagerExample {
     // 批量重新加载前3个标签页
     console.log('Batch reloading first 3 tabs...')
     const reloadResult = this.tabManager.reloadTabs(tabIds.slice(0, 3))
-    console.log(`Reload result: ${reloadResult.success.length} success, ${reloadResult.failed.length} failed`)
+    console.log(
+      `Reload result: ${reloadResult.success.length} success, ${reloadResult.failed.length} failed`
+    )
 
     // 批量关闭后2个标签页
     console.log('Batch closing last 2 tabs...')
     const closeResult = await this.tabManager.closeTabs(tabIds.slice(3))
-    console.log(`Close result: ${closeResult.success.length} success, ${closeResult.failed.length} failed`)
+    console.log(
+      `Close result: ${closeResult.success.length} success, ${closeResult.failed.length} failed`
+    )
 
     console.log(`Remaining tabs: ${this.tabManager.getTabCount()}`)
   }
@@ -235,7 +239,7 @@ export class TabManagerExample {
       console.log(`  Can go back: ${history.canGoBack}`)
       console.log(`  Can go forward: ${history.canGoForward}`)
       console.log(`  History entries: ${history.entries.length}`)
-      
+
       history.entries.forEach((entry, index) => {
         console.log(`    ${index}: ${entry.url} - ${entry.title}`)
       })
@@ -247,7 +251,7 @@ export class TabManagerExample {
    */
   public getManagerStatus(): void {
     console.log('=== TabManager Status ===')
-    
+
     const state = this.tabManager.getManagerState()
     console.log(`Active tab: ${state.activeTabId}`)
     console.log(`Tab count: ${state.tabCount}`)
@@ -276,7 +280,7 @@ export class TabManagerExample {
 // 使用示例
 export async function runTabManagerDemo(window: BrowserWindow): Promise<void> {
   const example = new TabManagerExample(window)
-  
+
   try {
     await example.initialize()
     await example.demonstrateBasicOperations()

@@ -182,12 +182,15 @@ export class LoginWindow extends EventEmitter {
    */
   private setupAutoReload(): void {
     // 10分钟自动重载
-    this.reloadTimer = setInterval(() => {
-      if (this.window.isVisible() && !this.window.isDestroyed()) {
-        this.reloadLogin()
-        windowLogger.debug('Auto reload login page')
-      }
-    }, 10 * 60 * 1000)
+    this.reloadTimer = setInterval(
+      () => {
+        if (this.window.isVisible() && !this.window.isDestroyed()) {
+          this.reloadLogin()
+          windowLogger.debug('Auto reload login page')
+        }
+      },
+      10 * 60 * 1000
+    )
   }
 
   /**

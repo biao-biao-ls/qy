@@ -1,5 +1,5 @@
 import { BrowserWindow, app } from 'electron'
-import { UpdateService, AppUpdateInfo, UpdateProgress } from '../services/UpdateService'
+import { AppUpdateInfo, UpdateProgress, UpdateService } from '../services/UpdateService'
 import { UpdateWindow, UpdateWindowType } from '../windows/UpdateWindow'
 import { updateLogger } from '../../utils/logger'
 import { AppConfig } from '../config/AppConfig'
@@ -56,16 +56,19 @@ export class UpdateManager {
     }
 
     this.isAutoCheckEnabled = true
-    
+
     // 应用启动后延迟检查更新
     setTimeout(() => {
       this.checkForUpdates(false) // 静默检查
     }, 5000)
 
     // 设置定期检查（每4小时检查一次）
-    this.checkInterval = setInterval(() => {
-      this.checkForUpdates(false)
-    }, 4 * 60 * 60 * 1000)
+    this.checkInterval = setInterval(
+      () => {
+        this.checkForUpdates(false)
+      },
+      4 * 60 * 60 * 1000
+    )
 
     updateLogger.info('UpdateManager: 启动自动更新检查')
   }
@@ -75,7 +78,7 @@ export class UpdateManager {
    */
   public stopAutoCheck(): void {
     this.isAutoCheckEnabled = false
-    
+
     if (this.checkInterval) {
       clearInterval(this.checkInterval)
       this.checkInterval = null
@@ -93,7 +96,7 @@ export class UpdateManager {
 
       // 先检查自定义更新服务器
       const customUpdateInfo = await this.updateService.checkCustomUpdate()
-      
+
       if (customUpdateInfo.hasUpdate) {
         this.handleCustomUpdate(customUpdateInfo)
         return
@@ -101,13 +104,13 @@ export class UpdateManager {
 
       // 检查 electron-updater
       const hasUpdate = await this.updateService.checkForUpdates()
-      
+
       if (!hasUpdate && showNoUpdateDialog) {
         this.showNoUpdateDialog()
       }
     } catch (error) {
       updateLogger.error('UpdateManager: 检查更新失败', error)
-      
+
       if (showNoUpdateDialog) {
         this.showUpdateError(error instanceof Error ? error.message : '检查更新失败')
       }
@@ -178,14 +181,14 @@ export class UpdateManager {
       if (this.updateWindow && !this.updateWindow.isDestroyed()) {
         this.updateWindow.close()
       }
-      
+
       this.updateWindow = UpdateWindow.createDownloadProgress()
-      
+
       // 开始下载
       await this.updateService.downloadUpdate()
     } catch (error) {
       updateLogger.error('UpdateManager: 下载更新失败', error)
-      this.showUpdateError('下载更新失败: ' + (error instanceof Error ? error.message : '未知错误'))
+      this.showUpdateError(`下载更新失败: ${error instanceof Error ? error.message : '未知错误'}`)
     }
   }
 
@@ -194,7 +197,7 @@ export class UpdateManager {
    */
   public installUpdate(): void {
     updateLogger.info('UpdateManager: 准备安装更新')
-    
+
     // 关闭更新窗口
     if (this.updateWindow && !this.updateWindow.isDestroyed()) {
       this.updateWindow.close()
@@ -215,27 +218,30 @@ export class UpdateManager {
           case 'update:checking':
             updateLogger.info('UpdateManager: 正在检查更新...')
             break
-            
-          case 'update:available':
+
+          case 'update:available': {
             const updateInfo = args[0]
             updateLogger.info('UpdateManager: 发现新版本', updateInfo.version)
             this.handleElectronUpdate(updateInfo)
             break
-            
+          }
+
           case 'update:not-available':
             updateLogger.info('UpdateManager: 当前已是最新版本')
             break
-            
-          case 'update:error':
+
+          case 'update:error': {
             const error = args[0]
             updateLogger.error('UpdateManager: 更新错误', error)
             break
-            
-          case 'update:download-progress':
+          }
+
+          case 'update:download-progress': {
             const progress = args[0] as UpdateProgress
             this.handleDownloadProgress(progress)
             break
-            
+          }
+
           case 'update:downloaded':
             updateLogger.info('UpdateManager: 更新下载完成')
             this.handleUpdateDownloaded()
@@ -250,11 +256,11 @@ export class UpdateManager {
    */
   private handleElectronUpdate(updateInfo: any): void {
     const message = `发现新版本 ${updateInfo.version}\n\n${updateInfo.releaseNotes || '新版本已发布'}\n\n是否立即下载？`
-    
+
     if (this.updateWindow && !this.updateWindow.isDestroyed()) {
       this.updateWindow.close()
     }
-    
+
     this.updateWindow = UpdateWindow.createUpdateTip(updateInfo.version, message)
   }
 
@@ -265,7 +271,7 @@ export class UpdateManager {
     if (this.updateWindow && !this.updateWindow.isDestroyed()) {
       this.updateWindow.updateOptions({
         progress: progress.percent,
-        message: `正在下载更新... ${progress.percent}%`
+        message: `正在下载更新... ${progress.percent}%`,
       })
     }
   }
@@ -279,7 +285,7 @@ export class UpdateManager {
         type: 'update-tip',
         title: '更新下载完成',
         message: '更新已下载完成，是否立即重启应用以完成更新？',
-        progress: 100
+        progress: 100,
       })
     }
   }
@@ -296,7 +302,7 @@ export class UpdateManager {
    */
   public cleanup(): void {
     this.stopAutoCheck()
-    
+
     if (this.updateWindow && !this.updateWindow.isDestroyed()) {
       this.updateWindow.close()
     }

@@ -4,18 +4,18 @@
  * 移除了复杂的事件系统和过度抽象，专注于核心功能
  */
 
-import { BrowserWindow, BrowserView, Rectangle } from 'electron'
+import { BrowserView, BrowserWindow, Rectangle } from 'electron'
 import { EventEmitter } from 'events'
-import { 
-  TabItem, 
-  TabCreateOptions, 
-  TabUpdateOptions, 
-  TabDragState,
-  TabNavigationHistory,
-  TabManagerState,
-  TabPerformanceStats,
+import {
   TabBatchOperationResult,
-  TabOperationOptions
+  TabCreateOptions,
+  TabDragState,
+  TabItem,
+  TabManagerState,
+  TabNavigationHistory,
+  TabOperationOptions,
+  TabPerformanceStats,
+  TabUpdateOptions,
 } from '../../types/tab'
 import { tabLogger } from '../../utils/logger'
 import { generateId } from '../../utils/helpers'
@@ -27,7 +27,7 @@ export class TabManager extends EventEmitter {
   private activeTabId: string | null = null
   private isInitialized = false
   private maxTabs = 20 // 最大标签页数量限制
-  
+
   // 拖拽状态管理
   private dragState: TabDragState = {
     isDragging: false,
@@ -358,7 +358,7 @@ export class TabManager extends EventEmitter {
 
     const maxPosition = this.tabs.size - 1
     const targetPosition = Math.max(0, Math.min(newPosition, maxPosition))
-    
+
     if (tab.position === targetPosition) {
       return
     }
@@ -379,7 +379,7 @@ export class TabManager extends EventEmitter {
    */
   public async closeAllTabs(): Promise<void> {
     const tabIds = Array.from(this.tabs.keys())
-    
+
     for (const tabId of tabIds) {
       try {
         await this.removeTab(tabId)
@@ -443,11 +443,11 @@ export class TabManager extends EventEmitter {
 
     const maxPosition = this.tabs.size - 1
     const validPosition = Math.max(0, Math.min(targetPosition, maxPosition))
-    
+
     this.dragState.targetPosition = validPosition
-    this.emit('tab-drag-move', { 
-      tabId: this.dragState.dragTabId, 
-      targetPosition: validPosition 
+    this.emit('tab-drag-move', {
+      tabId: this.dragState.dragTabId,
+      targetPosition: validPosition,
     })
   }
 
@@ -460,7 +460,7 @@ export class TabManager extends EventEmitter {
     }
 
     const { dragTabId, targetPosition } = this.dragState
-    
+
     // 如果目标位置有效，执行移动
     if (targetPosition !== null) {
       this.moveTab(dragTabId, targetPosition)
@@ -512,7 +512,7 @@ export class TabManager extends EventEmitter {
    */
   private updateNavigationHistory(tabId: string, url: string, title: string): void {
     let history = this.navigationHistories.get(tabId)
-    
+
     if (!history) {
       history = {
         canGoBack: false,
@@ -605,7 +605,10 @@ export class TabManager extends EventEmitter {
   /**
    * 批量关闭标签页
    */
-  public async closeTabs(tabIds: string[], options: TabOperationOptions = {}): Promise<TabBatchOperationResult> {
+  public async closeTabs(
+    tabIds: string[],
+    options: TabOperationOptions = {}
+  ): Promise<TabBatchOperationResult> {
     const result: TabBatchOperationResult = {
       success: [],
       failed: [],
@@ -773,22 +776,22 @@ export class TabManager extends EventEmitter {
     webContents.on('did-navigate', (event, url) => {
       const tab = this.tabs.get(tabId)
       const title = tab?.title || 'Loading...'
-      
+
       this.updateTabState(tabId, {
         url,
         canGoBack: webContents.canGoBack(),
         canGoForward: webContents.canGoForward(),
       })
-      
+
       // 更新导航历史
       this.updateNavigationHistory(tabId, url, title)
-      
+
       // 更新性能统计
       const stats = this.performanceStats.get(tabId)
       if (stats) {
         stats.navigationCount++
       }
-      
+
       this.emit('tab-navigated', { tabId, url })
     })
 

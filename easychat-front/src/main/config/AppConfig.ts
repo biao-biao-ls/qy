@@ -87,8 +87,11 @@ export class AppConfig extends EventEmitter {
 
         configLogger.info('AppConfig store initialized with electron-store')
       } catch (electronStoreError) {
-        configLogger.warn('Failed to load electron-store, using SimpleStore fallback', electronStoreError)
-        
+        configLogger.warn(
+          'Failed to load electron-store, using SimpleStore fallback',
+          electronStoreError
+        )
+
         // 使用简单存储作为备选方案
         this.store = new SimpleStore({
           defaults: DEFAULT_CONFIG,
@@ -321,29 +324,29 @@ export class AppConfig extends EventEmitter {
   public getSystemLanguage(): string {
     try {
       const locale = app.getLocale().toLowerCase()
-      
+
       // 语言映射表
       const languageMap: Record<string, string> = {
-        'en': 'en',
+        en: 'en',
         'en-us': 'en',
         'en-gb': 'en',
         'zh-cn': 'zh-CN',
         'zh-tw': 'zh-TW',
         'zh-hk': 'zh-TW',
-        'ja': 'ja',
+        ja: 'ja',
         'ja-jp': 'ja',
-        'ko': 'ko',
+        ko: 'ko',
         'ko-kr': 'ko',
-        'fr': 'fr',
+        fr: 'fr',
         'fr-fr': 'fr',
-        'de': 'de',
+        de: 'de',
         'de-de': 'de',
-        'es': 'es',
+        es: 'es',
         'es-es': 'es',
-        'pt': 'pt',
+        pt: 'pt',
         'pt-br': 'pt',
-        'ru': 'ru',
-        'ar': 'ar',
+        ru: 'ru',
+        ar: 'ar',
       }
 
       return languageMap[locale] || 'en'
@@ -494,11 +497,8 @@ export class AppConfig extends EventEmitter {
     try {
       const config = this.getAll()
       const backupData = JSON.stringify(config, null, 2)
-      const backupPath = path.join(
-        this.getUserDataPath(),
-        `config-backup-${Date.now()}.json`
-      )
-      
+      const backupPath = path.join(this.getUserDataPath(), `config-backup-${Date.now()}.json`)
+
       // 这里可以添加文件写入逻辑
       configLogger.info(`Config backed up to: ${backupPath}`)
       return backupPath
@@ -514,19 +514,19 @@ export class AppConfig extends EventEmitter {
   public validate(): boolean {
     try {
       const config = this.getAll()
-      
+
       // 基本验证
       if (!config.version) return false
       if (!config.preferences) return false
       if (!config.window) return false
       if (!config.tabs) return false
       if (!config.network) return false
-      
+
       // 详细验证
       if (typeof config.preferences.language !== 'string') return false
       if (typeof config.window.bounds !== 'object') return false
       if (!Array.isArray(config.tabs.defaultUrls)) return false
-      
+
       return true
     } catch (error) {
       configLogger.error('Config validation failed', error)
@@ -541,12 +541,12 @@ export class AppConfig extends EventEmitter {
     try {
       const currentVersion = this.get('version')
       const appVersion = this.getAppVersion()
-      
+
       if (currentVersion !== appVersion) {
         configLogger.info(`Migrating config from ${currentVersion} to ${appVersion}`)
-        
+
         // 这里可以添加版本迁移逻辑
-        
+
         this.set('version', appVersion)
         configLogger.info('Config migration completed')
       }

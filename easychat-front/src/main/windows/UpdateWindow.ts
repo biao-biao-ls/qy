@@ -51,8 +51,8 @@ export class UpdateWindow {
         preload: join(__dirname, '../preload/index.js'),
         sandbox: false,
         contextIsolation: true,
-        nodeIntegration: false
-      }
+        nodeIntegration: false,
+      },
     })
 
     // 加载更新提示页面
@@ -109,7 +109,7 @@ export class UpdateWindow {
    */
   public updateOptions(options: Partial<UpdateWindowOptions>): void {
     this.options = { ...this.options, ...options }
-    
+
     // 通知渲染进程更新选项
     if (this.window && !this.window.isDestroyed()) {
       this.window.webContents.send('update-window:options-changed', this.options)
@@ -167,7 +167,7 @@ export class UpdateWindow {
       title: '发现新版本',
       message,
       version,
-      forceUpdate: false
+      forceUpdate: false,
     })
   }
 
@@ -180,7 +180,7 @@ export class UpdateWindow {
       title: '强制更新',
       message,
       version,
-      forceUpdate: true
+      forceUpdate: true,
     })
   }
 
@@ -192,7 +192,7 @@ export class UpdateWindow {
       type: 'download-progress',
       title: '正在下载更新',
       message: '正在下载更新文件，请稍候...',
-      progress: 0
+      progress: 0,
     })
   }
 }

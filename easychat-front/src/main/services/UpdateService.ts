@@ -1,5 +1,5 @@
-import { autoUpdater, UpdateInfo } from 'electron-updater'
-import { BrowserWindow, ipcMain, app } from 'electron'
+import { UpdateInfo, autoUpdater } from 'electron-updater'
+import { BrowserWindow, app, ipcMain } from 'electron'
 import { updateLogger } from '../../utils/logger'
 import { AppConfig } from '../config/AppConfig'
 import { UpdateLogService } from './UpdateLogService'
@@ -94,7 +94,7 @@ export class UpdateService {
     // 配置更新服务器
     autoUpdater.setFeedURL({
       provider: 'generic',
-      url: this.getFeedURL()
+      url: this.getFeedURL(),
     })
 
     // 配置更新选项
@@ -109,48 +109,48 @@ export class UpdateService {
 
     autoUpdater.on('update-available', async (info: UpdateInfo) => {
       updateLogger.info('UpdateService: 发现新版本', info.version)
-      
+
       // 记录发现新版本
       await this.updateLogService.logCheck(true, `发现新版本 ${info.version}`)
-      
+
       this.sendToRenderer('update-available', {
         version: info.version,
         releaseNotes: info.releaseNotes,
-        releaseDate: info.releaseDate
+        releaseDate: info.releaseDate,
       })
     })
 
     autoUpdater.on('update-not-available', async () => {
       updateLogger.info('UpdateService: 当前已是最新版本')
-      
+
       // 记录无更新可用
       await this.updateLogService.logCheck(true, '当前已是最新版本')
-      
+
       this.sendToRenderer('update-not-available')
     })
 
-    autoUpdater.on('error', (error) => {
+    autoUpdater.on('error', error => {
       updateLogger.error('UpdateService: 更新检查失败', error)
       this.sendToRenderer('update-error', error.message)
       this.isChecking = false
       this.isDownloading = false
     })
 
-    autoUpdater.on('download-progress', (progress) => {
+    autoUpdater.on('download-progress', progress => {
       const progressInfo: UpdateProgress = {
         bytesPerSecond: progress.bytesPerSecond,
         percent: Math.round(progress.percent),
         transferred: progress.transferred,
-        total: progress.total
+        total: progress.total,
       }
-      updateLogger.info('UpdateService: 下载进度', progressInfo.percent + '%')
+      updateLogger.info('UpdateService: 下载进度', `${progressInfo.percent}%`)
       this.sendToRenderer('update-download-progress', progressInfo)
     })
 
     autoUpdater.on('update-downloaded', async (info: UpdateInfo) => {
       updateLogger.info('UpdateService: 更新下载完成')
       this.isDownloading = false
-      
+
       // 记录下载完成
       const duration = Date.now() - this.downloadStartTime
       await this.updateLogService.logDownload(
@@ -159,12 +159,10 @@ export class UpdateService {
         `版本 ${info.version} 下载完成`,
         duration
       )
-      
+
       this.sendToRenderer('update-downloaded')
     })
   }
-
-
 
   /**
    * 检查更新
@@ -178,24 +176,24 @@ export class UpdateService {
     try {
       this.isChecking = true
       updateLogger.info('UpdateService: 开始检查更新')
-      
+
       // 记录检查开始
       await this.updateLogService.logCheck(true, '开始检查更新')
-      
+
       // 使用 electron-updater 检查更新
       await autoUpdater.checkForUpdates()
       return true
     } catch (error) {
       updateLogger.error('UpdateService: 检查更新失败', error)
       this.isChecking = false
-      
+
       // 记录检查失败
       await this.updateLogService.logCheck(
-        false, 
-        '检查更新失败', 
+        false,
+        '检查更新失败',
         error instanceof Error ? error.message : String(error)
       )
-      
+
       return false
     }
   }
@@ -206,7 +204,7 @@ export class UpdateService {
   public async checkCustomUpdate(): Promise<AppUpdateInfo> {
     const currentVersion = this.getCurrentVersion()
     const platform = this.getCurrentPlatform()
-    
+
     // 这里可以配置自定义的更新检查 API
     const checkUrl = 'https://lceda.cn/api/jlcOrderClientVersion/'
 
@@ -225,7 +223,7 @@ export class UpdateService {
       }
 
       const result = await response.json()
-      
+
       if (!result.success) {
         throw new Error(`API Error: ${result.message || 'Unknown error'}`)
       }
@@ -260,7 +258,7 @@ export class UpdateService {
         version: newVersion,
         updateContent: forceUpdate ? '您的版本过低，需要强制更新' : '发现新版本，建议更新',
         updateUrl: 'https://www.jlc.com',
-        platform
+        platform,
       }
     } catch (error) {
       updateLogger.error('UpdateService: 自定义更新检查失败', error)
@@ -270,7 +268,7 @@ export class UpdateService {
         version: '',
         updateContent: '',
         updateUrl: '',
-        platform
+        platform,
       }
     }
   }
@@ -288,13 +286,13 @@ export class UpdateService {
       this.isDownloading = true
       this.downloadStartTime = Date.now()
       updateLogger.info('UpdateService: 开始下载更新')
-      
+
       await autoUpdater.downloadUpdate()
       return true
     } catch (error) {
       updateLogger.error('UpdateService: 下载更新失败', error)
       this.isDownloading = false
-      
+
       // 记录下载失败
       const duration = Date.now() - this.downloadStartTime
       await this.updateLogService.logDownload(
@@ -304,7 +302,7 @@ export class UpdateService {
         duration,
         error instanceof Error ? error.message : String(error)
       )
-      
+
       return false
     }
   }
@@ -314,26 +312,21 @@ export class UpdateService {
    */
   public async installUpdate(): Promise<void> {
     const currentVersion = this.getCurrentVersion()
-    
+
     try {
       updateLogger.info('UpdateService: 安装更新并重启应用')
-      
+
       // 创建当前版本的备份
       await this.rollbackService.createBackup(currentVersion)
-      
+
       // 记录安装开始
-      await this.updateLogService.logInstall(
-        currentVersion,
-        'updating',
-        true,
-        '开始安装更新'
-      )
-      
+      await this.updateLogService.logInstall(currentVersion, 'updating', true, '开始安装更新')
+
       // 安装更新并重启
       autoUpdater.quitAndInstall()
     } catch (error) {
       updateLogger.error('UpdateService: 安装更新失败', error)
-      
+
       // 记录安装失败
       await this.updateLogService.logInstall(
         currentVersion,
@@ -343,7 +336,7 @@ export class UpdateService {
         0,
         error instanceof Error ? error.message : String(error)
       )
-      
+
       throw error
     }
   }
@@ -419,7 +412,7 @@ export class UpdateService {
 
     // 根据平台返回对应的更新服务器 URL
     const baseUrl = 'https://test-static.jlcpcb.com/app_version/package'
-    
+
     if (process.platform === 'darwin') {
       const isARM = process.arch === 'arm64'
       return isARM ? `${baseUrl}/mac/arm` : `${baseUrl}/mac/intel`

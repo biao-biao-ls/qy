@@ -84,7 +84,7 @@ export class UpdateRollbackService {
    */
   public async createBackup(version: string): Promise<VersionBackup | null> {
     const startTime = Date.now()
-    
+
     try {
       updateLogger.info(`UpdateRollbackService: 开始创建版本 ${version} 的备份`)
 
@@ -107,22 +107,22 @@ export class UpdateRollbackService {
         metadata: {
           platform: process.platform,
           arch: process.arch,
-          nodeVersion: process.version
-        }
+          nodeVersion: process.version,
+        },
       }
 
       await fs.writeFile(backupPath, JSON.stringify(backupData, null, 2), 'utf-8')
 
       // 获取备份文件大小
       const stats = await fs.stat(backupPath)
-      
+
       const backup: VersionBackup = {
         id: backupId,
         version,
         backupTime: new Date(),
         backupPath,
         size: stats.size,
-        isValid: true
+        isValid: true,
       }
 
       // 添加到备份列表
@@ -143,7 +143,7 @@ export class UpdateRollbackService {
     } catch (error) {
       const duration = Date.now() - startTime
       updateLogger.error(`UpdateRollbackService: 创建版本 ${version} 备份失败`, error)
-      
+
       await this.updateLogService.logError(
         `创建版本 ${version} 备份失败`,
         error instanceof Error ? error.message : String(error),
@@ -166,7 +166,7 @@ export class UpdateRollbackService {
 
       // 确定目标版本
       let targetBackup: VersionBackup | undefined
-      
+
       if (options.targetVersion) {
         targetBackup = this.backups.find(
           backup => backup.version === options.targetVersion && backup.isValid
@@ -200,7 +200,7 @@ export class UpdateRollbackService {
         fromVersion: currentVersion,
         toVersion: targetBackup.version,
         message: `成功回滚到版本 ${targetBackup.version}`,
-        duration
+        duration,
       }
 
       updateLogger.info('UpdateRollbackService: 回滚完成', result)
@@ -217,14 +217,14 @@ export class UpdateRollbackService {
     } catch (error) {
       const duration = Date.now() - startTime
       const errorMessage = error instanceof Error ? error.message : String(error)
-      
+
       const result: RollbackResult = {
         success: false,
         fromVersion: currentVersion,
         toVersion: options.targetVersion || 'unknown',
         message: `回滚失败: ${errorMessage}`,
         error: errorMessage,
-        duration
+        duration,
       }
 
       updateLogger.error('UpdateRollbackService: 回滚失败', error)
@@ -270,7 +270,7 @@ export class UpdateRollbackService {
       if (!backup) {
         return false
       }
-      
+
       // 删除备份文件
       try {
         await fs.unlink(backup.backupPath)
@@ -323,12 +323,12 @@ export class UpdateRollbackService {
     try {
       const data = await fs.readFile(this.backupsFilePath, 'utf-8')
       const parsedBackups = JSON.parse(data)
-      
+
       this.backups = parsedBackups.map((backup: any) => ({
         ...backup,
-        backupTime: new Date(backup.backupTime)
+        backupTime: new Date(backup.backupTime),
       }))
-      
+
       updateLogger.info(`UpdateRollbackService: 加载了 ${this.backups.length} 个备份`)
     } catch (error) {
       if ((error as any).code !== 'ENOENT') {
@@ -350,7 +350,7 @@ export class UpdateRollbackService {
    */
   private async validateBackups(): Promise<void> {
     let invalidCount = 0
-    
+
     for (const backup of this.backups) {
       const isValid = await this.validateBackup(backup)
       if (!isValid) {
@@ -388,12 +388,12 @@ export class UpdateRollbackService {
     // 2. 替换应用文件
     // 3. 更新配置
     // 4. 重启应用
-    
+
     updateLogger.info(`UpdateRollbackService: 模拟回滚到版本 ${backup.version}`)
-    
+
     // 模拟回滚过程
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
+
     // 在实际实现中，这里应该触发应用重启
     updateLogger.info('UpdateRollbackService: 回滚操作完成，需要重启应用')
   }

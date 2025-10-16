@@ -6,7 +6,7 @@
 import { BrowserWindow, BrowserWindowConstructorOptions } from 'electron'
 import { EventEmitter } from 'events'
 import path from 'path'
-import { WindowType, WindowOptions, WindowState, WindowError } from '../../types/window'
+import { WindowError, WindowOptions, WindowState, WindowType } from '../../types/window'
 import { windowLogger } from '../../utils/logger'
 import { generateId, isDevelopment } from '../../utils/helpers'
 import { DEFAULT_WINDOW_CONFIG } from '../../utils/constants'
@@ -367,7 +367,7 @@ export class WindowManager extends EventEmitter {
         windowInstance.destroy()
         this.windowInstances.delete(windowId)
       }
-      
+
       this.windows.delete(windowId)
       this.windowTypes.delete(windowId)
       windowLogger.info(`Window closed: ${type} (${windowId})`)
@@ -448,16 +448,16 @@ export class WindowManager extends EventEmitter {
 
     const browserWindow = this.createWindow(WindowType.MAIN)
     const mainWindow = new MainWindow(browserWindow)
-    
+
     // 存储窗口实例
     const windowId = this.getWindowId(browserWindow)
     if (windowId) {
       this.windowInstances.set(windowId, mainWindow)
     }
-    
+
     // 初始化主窗口
     await mainWindow.initialize()
-    
+
     return browserWindow
   }
 
@@ -474,16 +474,16 @@ export class WindowManager extends EventEmitter {
 
     const browserWindow = this.createWindow(WindowType.SETTING)
     const settingWindow = new SettingWindow(browserWindow)
-    
+
     // 存储窗口实例
     const windowId = this.getWindowId(browserWindow)
     if (windowId) {
       this.windowInstances.set(windowId, settingWindow)
     }
-    
+
     // 初始化设置窗口
     await settingWindow.initialize()
-    
+
     return browserWindow
   }
 
@@ -500,16 +500,16 @@ export class WindowManager extends EventEmitter {
 
     const browserWindow = this.createWindow(WindowType.LOGIN)
     const loginWindow = new LoginWindow(browserWindow)
-    
+
     // 存储窗口实例
     const windowId = this.getWindowId(browserWindow)
     if (windowId) {
       this.windowInstances.set(windowId, loginWindow)
     }
-    
+
     // 初始化登录窗口
     await loginWindow.initialize()
-    
+
     return browserWindow
   }
 
@@ -548,7 +548,7 @@ export class WindowManager extends EventEmitter {
       windowInstance.destroy()
     }
     this.windowInstances.clear()
-    
+
     this.closeAllWindows()
     this.removeAllListeners()
     WindowManager.instance = null

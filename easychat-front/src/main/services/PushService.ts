@@ -5,7 +5,7 @@
 
 import { EventEmitter } from 'events'
 import WebSocket from 'ws'
-import { ConnectionState, PushMessage, MessageType, PushConnectionConfig } from '../../types/push'
+import { ConnectionState, MessageType, PushConnectionConfig, PushMessage } from '../../types/push'
 import { pushLogger as logger } from '../../utils/logger'
 
 export interface PushServiceConfig {
@@ -36,14 +36,14 @@ export class PushService extends EventEmitter {
   private reconnectTimer: NodeJS.Timeout | null = null
   private heartbeatTimer: NodeJS.Timeout | null = null
   private heartbeatTimeoutTimer: NodeJS.Timeout | null = null
-  
+
   // 连接统计
   private statistics: ConnectionStatistics = {
     reconnectAttempts: 0,
     messageCount: 0,
-    errorCount: 0
+    errorCount: 0,
   }
-  
+
   // 消息队列
   private messageQueue: string[] = []
   private isConnected = false
@@ -52,7 +52,7 @@ export class PushService extends EventEmitter {
 
   constructor(config: PushServiceConfig) {
     super()
-    
+
     // 设置默认配置
     this.config = {
       url: config.url,
@@ -60,9 +60,9 @@ export class PushService extends EventEmitter {
       reconnectInterval: config.reconnectInterval || 5000,
       maxReconnectAttempts: config.maxReconnectAttempts || 5,
       heartbeatInterval: config.heartbeatInterval || 30000,
-      timeout: config.timeout || 10000
+      timeout: config.timeout || 10000,
     }
-    
+
     logger.info('PushService', 'constructor', '推送服务初始化完成', { config: this.config })
   }
 
@@ -81,14 +81,14 @@ export class PushService extends EventEmitter {
 
       // 构建连接 URL
       const wsUrl = this.buildWebSocketUrl()
-      
+
       // 创建 WebSocket 连接
       this.ws = new WebSocket(wsUrl, {
         headers: {
-          'Authorization': `Bearer ${this.config.token}`,
-          'User-Agent': 'EasyChat/1.0.0'
+          Authorization: `Bearer ${this.config.token}`,
+          'User-Agent': 'EasyChat/1.0.0',
         },
-        handshakeTimeout: this.config.timeout
+        handshakeTimeout: this.config.timeout,
       })
 
       // 设置事件监听器
@@ -96,7 +96,6 @@ export class PushService extends EventEmitter {
 
       // 等待连接建立
       await this.waitForConnection()
-      
     } catch (error) {
       this.statistics.errorCount++
       logger.error('PushService', 'connect', '连接失败', error)
@@ -111,20 +110,20 @@ export class PushService extends EventEmitter {
    */
   async disconnect(): Promise<void> {
     logger.info('PushService', 'disconnect', '开始断开连接')
-    
+
     // 停止重连和心跳
     this.stopReconnect()
     this.stopHeartbeat()
-    
+
     // 关闭 WebSocket 连接
     if (this.ws) {
       this.ws.close(1000, '正常关闭')
       this.ws = null
     }
-    
+
     this.isConnected = false
     this.updateConnectionState(ConnectionState.DISCONNECTED)
-    
+
     logger.info('PushService', 'disconnect', '连接已断开')
   }
 
@@ -133,7 +132,7 @@ export class PushService extends EventEmitter {
    */
   send(message: any): void {
     const messageStr = typeof message === 'string' ? message : JSON.stringify(message)
-    
+
     if (!this.isConnected || !this.ws) {
       logger.warn('PushService', 'send', '连接未建立，消息加入队列', { message: messageStr })
       this.messageQueue.push(messageStr)
@@ -163,16 +162,16 @@ export class PushService extends EventEmitter {
         timestamp: now,
         clientInfo: {
           clientType: 'desktop',
-          clientVersion: '1.0.0'
-        }
+          clientVersion: '1.0.0',
+        },
       }
 
       this.send(heartbeatMessage)
       this.lastHeartbeatTime = now
-      
+
       // 设置心跳超时检测
       this.setHeartbeatTimeout()
-      
+
       logger.debug('PushService', 'sendHeartbeat', '心跳消息已发送')
     } catch (error) {
       logger.error('PushService', 'sendHeartbeat', '发送心跳失败', error)
@@ -185,20 +184,20 @@ export class PushService extends EventEmitter {
   private buildWebSocketUrl(): string {
     try {
       const url = new URL(this.config.url)
-      
+
       // 确保使用正确的协议
       if (url.protocol === 'http:') {
         url.protocol = 'ws:'
       } else if (url.protocol === 'https:') {
         url.protocol = 'wss:'
       }
-      
+
       // 添加认证参数
       if (this.config.token) {
         url.searchParams.set('token', this.config.token)
       }
       url.searchParams.set('timestamp', Date.now().toString())
-      
+
       return url.toString()
     } catch (error) {
       logger.error('PushService', 'buildWebSocketUrl', '构建 URL 失败', error)
@@ -216,16 +215,16 @@ export class PushService extends EventEmitter {
       this.statistics.connectTime = Date.now()
       this.statistics.reconnectAttempts = 0
       this.isConnected = true
-      
+
       logger.info('PushService', 'onOpen', 'WebSocket 连接已建立')
       this.updateConnectionState(ConnectionState.CONNECTED)
-      
+
       // 发送队列中的消息
       this.flushMessageQueue()
-      
+
       // 启动心跳
       this.startHeartbeat()
-      
+
       this.emit('connected')
     })
 
@@ -234,15 +233,14 @@ export class PushService extends EventEmitter {
         const message = data.toString()
         this.statistics.lastMessageTime = Date.now()
         this.statistics.messageCount++
-        
+
         logger.debug('PushService', 'onMessage', '收到消息', { messageLength: message.length })
-        
+
         // 解析消息
         const parsedMessage = this.parseMessage(message)
         if (parsedMessage) {
           this.handleMessage(parsedMessage)
         }
-        
       } catch (error) {
         logger.error('PushService', 'onMessage', '处理消息失败', error)
         this.statistics.errorCount++
@@ -252,12 +250,12 @@ export class PushService extends EventEmitter {
     this.ws.on('close', (code: number, reason: string) => {
       this.isConnected = false
       this.stopHeartbeat()
-      
+
       logger.info('PushService', 'onClose', 'WebSocket 连接已关闭', { code, reason })
-      
+
       this.updateConnectionState(ConnectionState.DISCONNECTED)
       this.emit('disconnected', { code, reason })
-      
+
       // 判断是否需要重连
       if (this.shouldReconnect(code)) {
         this.scheduleReconnect()
@@ -267,7 +265,7 @@ export class PushService extends EventEmitter {
     this.ws.on('error', (error: Error) => {
       this.statistics.errorCount++
       logger.error('PushService', 'onError', 'WebSocket 连接错误', error)
-      
+
       this.updateConnectionState(ConnectionState.ERROR)
       this.emit('error', error)
     })
@@ -292,7 +290,7 @@ export class PushService extends EventEmitter {
         resolve()
       })
 
-      this.ws.once('error', (error) => {
+      this.ws.once('error', error => {
         clearTimeout(timeout)
         reject(error)
       })
@@ -330,7 +328,6 @@ export class PushService extends EventEmitter {
 
       // 发射通用消息事件
       this.emit('message', message)
-      
     } catch (error) {
       logger.error('PushService', 'handleMessage', '处理消息失败', error)
     }
@@ -357,19 +354,18 @@ export class PushService extends EventEmitter {
         data: message.data,
         timestamp: new Date(message.timestamp || Date.now()),
         priority: message.priority || 'normal',
-        read: false
+        read: false,
       }
 
-      logger.info('PushService', 'handleNotificationMessage', '收到通知消息', { 
-        id: notification.id, 
-        title: notification.title 
+      logger.info('PushService', 'handleNotificationMessage', '收到通知消息', {
+        id: notification.id,
+        title: notification.title,
       })
 
       this.emit('notification', notification)
-      
+
       // 发送消息确认
       this.sendMessageAck(notification.id)
-      
     } catch (error) {
       logger.error('PushService', 'handleNotificationMessage', '处理通知消息失败', error)
     }
@@ -382,11 +378,11 @@ export class PushService extends EventEmitter {
     try {
       const ackMessage = {
         messageType: 'ACK',
-        messageId: messageId,
+        messageId,
         status: 'delivered',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       }
-      
+
       this.send(ackMessage)
       logger.debug('PushService', 'sendMessageAck', '消息确认已发送', { messageId })
     } catch (error) {
@@ -399,15 +395,17 @@ export class PushService extends EventEmitter {
    */
   private startHeartbeat(): void {
     this.stopHeartbeat()
-    
-    logger.debug('PushService', 'startHeartbeat', '启动心跳', { interval: this.config.heartbeatInterval })
-    
+
+    logger.debug('PushService', 'startHeartbeat', '启动心跳', {
+      interval: this.config.heartbeatInterval,
+    })
+
     this.heartbeatTimer = setInterval(() => {
       if (this.isConnected) {
         this.sendHeartbeat()
       }
     }, this.config.heartbeatInterval)
-    
+
     // 立即发送一次心跳
     if (this.isConnected) {
       this.sendHeartbeat()
@@ -430,10 +428,10 @@ export class PushService extends EventEmitter {
    */
   private setHeartbeatTimeout(): void {
     this.clearHeartbeatTimeout()
-    
+
     this.heartbeatTimeoutTimer = setTimeout(() => {
       logger.warn('PushService', 'heartbeatTimeout', '心跳超时，可能连接异常')
-      
+
       // 心跳超时，关闭连接触发重连
       if (this.ws) {
         this.ws.close(1006, '心跳超时')
@@ -456,12 +454,14 @@ export class PushService extends EventEmitter {
    */
   private flushMessageQueue(): void {
     if (this.messageQueue.length === 0) return
-    
-    logger.info('PushService', 'flushMessageQueue', '发送队列消息', { count: this.messageQueue.length })
-    
+
+    logger.info('PushService', 'flushMessageQueue', '发送队列消息', {
+      count: this.messageQueue.length,
+    })
+
     const messages = [...this.messageQueue]
     this.messageQueue = []
-    
+
     for (const message of messages) {
       try {
         this.send(message)
@@ -480,13 +480,13 @@ export class PushService extends EventEmitter {
     if (closeCode === 1000) {
       return false
     }
-    
+
     // 达到最大重连次数
     if (this.statistics.reconnectAttempts >= this.config.maxReconnectAttempts) {
       logger.warn('PushService', 'shouldReconnect', '达到最大重连次数，停止重连')
       return false
     }
-    
+
     return true
   }
 
@@ -497,27 +497,27 @@ export class PushService extends EventEmitter {
     if (this.reconnectTimer) {
       return
     }
-    
+
     this.statistics.reconnectAttempts++
     const delay = Math.min(
       this.config.reconnectInterval * Math.pow(2, this.statistics.reconnectAttempts - 1),
       30000 // 最大延迟30秒
     )
-    
-    logger.info('PushService', 'scheduleReconnect', '安排重连', { 
-      attempt: this.statistics.reconnectAttempts, 
-      delay 
+
+    logger.info('PushService', 'scheduleReconnect', '安排重连', {
+      attempt: this.statistics.reconnectAttempts,
+      delay,
     })
-    
+
     this.updateConnectionState(ConnectionState.RECONNECTING)
-    
+
     this.reconnectTimer = setTimeout(async () => {
       this.reconnectTimer = null
       try {
         await this.connect()
       } catch (error) {
         logger.error('PushService', 'scheduleReconnect', '重连失败', error)
-        
+
         // 继续尝试重连
         if (this.statistics.reconnectAttempts < this.config.maxReconnectAttempts) {
           this.scheduleReconnect()
@@ -544,17 +544,19 @@ export class PushService extends EventEmitter {
   private updateConnectionState(newState: ConnectionState): void {
     const oldState = this.connectionState
     this.connectionState = newState
-    
+
     if (oldState !== newState) {
-      logger.info('PushService', 'updateConnectionState', '连接状态变更', { 
-        from: oldState, 
-        to: newState 
+      logger.info('PushService', 'updateConnectionState', '连接状态变更', {
+        from: oldState,
+        to: newState,
       })
-      
+
       this.emit('connectionStateChanged', {
         state: newState,
-        lastConnected: this.statistics.connectTime ? new Date(this.statistics.connectTime) : undefined,
-        reconnectAttempts: this.statistics.reconnectAttempts
+        lastConnected: this.statistics.connectTime
+          ? new Date(this.statistics.connectTime)
+          : undefined,
+        reconnectAttempts: this.statistics.reconnectAttempts,
       })
     }
   }
@@ -588,7 +590,7 @@ export class PushService extends EventEmitter {
     this.statistics = {
       reconnectAttempts: 0,
       messageCount: 0,
-      errorCount: 0
+      errorCount: 0,
     }
     logger.info('PushService', 'resetStatistics', '统计信息已重置')
   }
@@ -598,10 +600,10 @@ export class PushService extends EventEmitter {
    */
   async destroy(): Promise<void> {
     logger.info('PushService', 'destroy', '销毁推送服务')
-    
+
     await this.disconnect()
     this.removeAllListeners()
-    
+
     logger.info('PushService', 'destroy', '推送服务已销毁')
   }
 }

@@ -3,8 +3,8 @@
  * 处理桌面通知的显示、管理和用户交互
  */
 
-import { Notification, shell, BrowserWindow } from 'electron'
-import { PushMessage, MessageType } from '../../types/push'
+import { BrowserWindow, Notification, shell } from 'electron'
+import { MessageType, PushMessage } from '../../types/push'
 import { pushLogger as logger } from '../../utils/logger'
 import { EventEmitter } from 'events'
 
@@ -32,27 +32,27 @@ export class NotificationService extends EventEmitter {
   private activeNotifications = new Map<string, NotificationItem>()
   private notificationQueue: PushMessage[] = []
   private isProcessingQueue = false
-  
+
   // 统计信息
   private statistics = {
     totalNotifications: 0,
     shownNotifications: 0,
     clickedNotifications: 0,
-    failedNotifications: 0
+    failedNotifications: 0,
   }
 
   constructor(config: NotificationConfig = {}) {
     super()
-    
+
     this.config = {
       maxConcurrent: config.maxConcurrent || 3,
       defaultTimeout: config.defaultTimeout || 5000,
       soundEnabled: config.soundEnabled !== false,
-      iconPath: config.iconPath || ''
+      iconPath: config.iconPath || '',
     }
-    
+
     logger.info('NotificationService', 'constructor', '通知服务初始化完成', { config: this.config })
-    
+
     this.checkNotificationSupport()
   }
 
@@ -64,7 +64,7 @@ export class NotificationService extends EventEmitter {
       logger.warn('NotificationService', 'checkNotificationSupport', '系统不支持桌面通知')
       throw new Error('系统不支持桌面通知')
     }
-    
+
     logger.info('NotificationService', 'checkNotificationSupport', '桌面通知支持检查通过')
   }
 
@@ -74,11 +74,11 @@ export class NotificationService extends EventEmitter {
   async showNotification(message: PushMessage): Promise<void> {
     try {
       this.statistics.totalNotifications++
-      
+
       logger.info('NotificationService', 'showNotification', '请求显示通知', {
         id: message.id,
         title: message.title,
-        type: message.type
+        type: message.type,
       })
 
       // 验证消息数据
@@ -93,7 +93,6 @@ export class NotificationService extends EventEmitter {
         // 添加到队列
         this.addToQueue(message)
       }
-      
     } catch (error) {
       this.statistics.failedNotifications++
       logger.error('NotificationService', 'showNotification', '显示通知失败', error)
@@ -110,21 +109,21 @@ export class NotificationService extends EventEmitter {
       logger.warn('NotificationService', 'validateMessage', '通知标题无效')
       return false
     }
-    
+
     if (!message.content || typeof message.content !== 'string') {
       logger.warn('NotificationService', 'validateMessage', '通知内容无效')
       return false
     }
-    
+
     // 截断过长的标题和内容
     if (message.title.length > 100) {
-      message.title = message.title.substring(0, 97) + '...'
+      message.title = `${message.title.substring(0, 97)}...`
     }
-    
+
     if (message.content.length > 300) {
-      message.content = message.content.substring(0, 297) + '...'
+      message.content = `${message.content.substring(0, 297)}...`
     }
-    
+
     return true
   }
 
@@ -147,7 +146,7 @@ export class NotificationService extends EventEmitter {
         icon: this.config.iconPath,
         silent: !this.config.soundEnabled,
         timeoutType: 'never', // 不自动关闭
-        urgency: this.mapPriorityToUrgency(message.priority)
+        urgency: this.mapPriorityToUrgency(message.priority),
       })
 
       // 创建通知项
@@ -156,7 +155,7 @@ export class NotificationService extends EventEmitter {
         notification,
         message,
         createdAt: Date.now(),
-        isShown: false
+        isShown: false,
       }
 
       // 设置事件监听器
@@ -173,14 +172,14 @@ export class NotificationService extends EventEmitter {
       logger.info('NotificationService', 'displayNotification', '通知已显示', {
         id: message.id,
         title: message.title,
-        activeCount: this.activeNotifications.size
+        activeCount: this.activeNotifications.size,
       })
 
       // 发射通知显示事件
       this.emit('notificationShown', {
         id: message.id,
         message,
-        timestamp: notificationItem.createdAt
+        timestamp: notificationItem.createdAt,
       })
 
       // 设置自动关闭（如果配置了超时时间）
@@ -189,7 +188,6 @@ export class NotificationService extends EventEmitter {
           this.closeNotification(message.id)
         }, this.config.defaultTimeout)
       }
-      
     } catch (error) {
       logger.error('NotificationService', 'displayNotification', '显示通知失败', error)
       throw error
@@ -218,7 +216,7 @@ export class NotificationService extends EventEmitter {
     })
 
     // 失败事件
-    notification.on('failed', (error) => {
+    notification.on('failed', error => {
       logger.error('NotificationService', 'onFailed', '通知显示失败', error)
       this.handleNotificationClose(item)
     })
@@ -230,17 +228,17 @@ export class NotificationService extends EventEmitter {
   private async handleNotificationClick(item: NotificationItem): Promise<void> {
     try {
       this.statistics.clickedNotifications++
-      
+
       logger.info('NotificationService', 'handleNotificationClick', '通知被点击', {
         id: item.id,
-        title: item.message.title
+        title: item.message.title,
       })
 
       // 发射点击事件
       this.emit('notificationClicked', {
         id: item.id,
         message: item.message,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       })
 
       // 处理点击动作
@@ -248,7 +246,6 @@ export class NotificationService extends EventEmitter {
 
       // 关闭通知
       this.closeNotification(item.id)
-      
     } catch (error) {
       logger.error('NotificationService', 'handleNotificationClick', '处理通知点击失败', error)
     }
@@ -276,7 +273,6 @@ export class NotificationService extends EventEmitter {
 
       // 默认动作：显示主窗口
       this.showMainWindow()
-      
     } catch (error) {
       logger.error('NotificationService', 'handleNotificationAction', '处理通知动作失败', error)
     }
@@ -288,7 +284,7 @@ export class NotificationService extends EventEmitter {
   private async openUrl(url: string): Promise<void> {
     try {
       logger.info('NotificationService', 'openUrl', '打开 URL', { url })
-      
+
       // 尝试在主窗口中打开
       const mainWindow = this.getMainWindow()
       if (mainWindow && !mainWindow.isDestroyed()) {
@@ -298,19 +294,22 @@ export class NotificationService extends EventEmitter {
         }
         mainWindow.show()
         mainWindow.focus()
-        
+
         // 在主窗口中打开 URL
-        mainWindow.webContents.executeJavaScript(`
+        mainWindow.webContents
+          .executeJavaScript(
+            `
           window.open('${url}', '_blank');
-        `).catch(() => {
-          // 如果在主窗口中打开失败，使用外部浏览器
-          return shell.openExternal(url)
-        })
+        `
+          )
+          .catch(() => {
+            // 如果在主窗口中打开失败，使用外部浏览器
+            return shell.openExternal(url)
+          })
       } else {
         // 主窗口不可用，使用外部浏览器
         await shell.openExternal(url)
       }
-      
     } catch (error) {
       logger.error('NotificationService', 'openUrl', '打开 URL 失败', error)
       // 最后的回退方案
@@ -334,7 +333,7 @@ export class NotificationService extends EventEmitter {
         }
         mainWindow.show()
         mainWindow.focus()
-        
+
         logger.info('NotificationService', 'showMainWindow', '主窗口已显示')
       } else {
         logger.warn('NotificationService', 'showMainWindow', '主窗口不可用')
@@ -349,7 +348,10 @@ export class NotificationService extends EventEmitter {
    */
   private getMainWindow(): BrowserWindow | null {
     const windows = BrowserWindow.getAllWindows()
-    return windows.find(win => !win.isDestroyed() && win.webContents.getURL().includes('index.html')) || null
+    return (
+      windows.find(win => !win.isDestroyed() && win.webContents.getURL().includes('index.html')) ||
+      null
+    )
   }
 
   /**
@@ -366,12 +368,11 @@ export class NotificationService extends EventEmitter {
       this.emit('notificationClosed', {
         id: item.id,
         message: item.message,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       })
 
       // 处理队列中的下一个通知
       this.processQueue()
-      
     } catch (error) {
       logger.error('NotificationService', 'handleNotificationClose', '处理通知关闭失败', error)
     }
@@ -399,20 +400,23 @@ export class NotificationService extends EventEmitter {
   private addToQueue(message: PushMessage): void {
     // 按优先级插入队列
     let insertIndex = this.notificationQueue.length
-    
+
     for (let i = 0; i < this.notificationQueue.length; i++) {
-      if (this.getPriorityValue(message.priority) > this.getPriorityValue(this.notificationQueue[i]?.priority || 'normal')) {
+      if (
+        this.getPriorityValue(message.priority) >
+        this.getPriorityValue(this.notificationQueue[i]?.priority || 'normal')
+      ) {
         insertIndex = i
         break
       }
     }
-    
+
     this.notificationQueue.splice(insertIndex, 0, message)
-    
+
     logger.info('NotificationService', 'addToQueue', '通知已添加到队列', {
       id: message.id,
       priority: message.priority,
-      queueSize: this.notificationQueue.length
+      queueSize: this.notificationQueue.length,
     })
   }
 
@@ -421,11 +425,16 @@ export class NotificationService extends EventEmitter {
    */
   private getPriorityValue(priority: string): number {
     switch (priority) {
-      case 'urgent': return 4
-      case 'high': return 3
-      case 'normal': return 2
-      case 'low': return 1
-      default: return 2
+      case 'urgent':
+        return 4
+      case 'high':
+        return 3
+      case 'normal':
+        return 2
+      case 'low':
+        return 1
+      default:
+        return 2
     }
   }
 
@@ -468,7 +477,6 @@ export class NotificationService extends EventEmitter {
 
       // 从活跃列表中移除
       this.activeNotifications.delete(notificationId)
-      
     } catch (error) {
       logger.error('NotificationService', 'closeNotification', '关闭通知失败', error)
     }
@@ -481,7 +489,7 @@ export class NotificationService extends EventEmitter {
     try {
       logger.info('NotificationService', 'clearAllNotifications', '关闭所有通知', {
         activeCount: this.activeNotifications.size,
-        queueCount: this.notificationQueue.length
+        queueCount: this.notificationQueue.length,
       })
 
       // 关闭所有活跃通知
@@ -496,7 +504,6 @@ export class NotificationService extends EventEmitter {
       // 清空列表和队列
       this.activeNotifications.clear()
       this.notificationQueue = []
-      
     } catch (error) {
       logger.error('NotificationService', 'clearAllNotifications', '关闭所有通知失败', error)
     }
@@ -518,12 +525,20 @@ export class NotificationService extends EventEmitter {
       ...this.statistics,
       activeNotifications: this.activeNotifications.size,
       queuedNotifications: this.notificationQueue.length,
-      clickRate: this.statistics.shownNotifications > 0 
-        ? (this.statistics.clickedNotifications / this.statistics.shownNotifications * 100).toFixed(2) + '%' 
-        : '0%',
-      successRate: this.statistics.totalNotifications > 0 
-        ? (this.statistics.shownNotifications / this.statistics.totalNotifications * 100).toFixed(2) + '%' 
-        : '0%'
+      clickRate:
+        this.statistics.shownNotifications > 0
+          ? `${(
+              (this.statistics.clickedNotifications / this.statistics.shownNotifications) *
+              100
+            ).toFixed(2)}%`
+          : '0%',
+      successRate:
+        this.statistics.totalNotifications > 0
+          ? `${(
+              (this.statistics.shownNotifications / this.statistics.totalNotifications) *
+              100
+            ).toFixed(2)}%`
+          : '0%',
     }
   }
 
@@ -535,9 +550,9 @@ export class NotificationService extends EventEmitter {
       totalNotifications: 0,
       shownNotifications: 0,
       clickedNotifications: 0,
-      failedNotifications: 0
+      failedNotifications: 0,
     }
-    
+
     logger.info('NotificationService', 'resetStatistics', '统计信息已重置')
   }
 
@@ -555,7 +570,6 @@ export class NotificationService extends EventEmitter {
       this.removeAllListeners()
 
       logger.info('NotificationService', 'destroy', '通知服务已销毁')
-      
     } catch (error) {
       logger.error('NotificationService', 'destroy', '销毁通知服务失败', error)
     }

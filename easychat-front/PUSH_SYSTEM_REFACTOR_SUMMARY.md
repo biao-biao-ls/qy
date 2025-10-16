@@ -9,6 +9,7 @@
 ### 7.1 WebSocket 连接管理优化 ✅
 
 **实现的功能：**
+
 - 简化的 WebSocket 连接管理器 (`PushService`)
 - 自动重连机制，支持指数退避算法
 - 心跳保活机制，实时监控连接状态
@@ -17,6 +18,7 @@
 - 连接统计信息和性能监控
 
 **技术特性：**
+
 - 自动重连：最大重连次数限制，智能延迟策略
 - 心跳保活：定期发送心跳，检测连接健康状况
 - 消息队列：连接断开时缓存消息，重连后自动发送
@@ -26,6 +28,7 @@
 ### 7.2 消息处理和通知系统 ✅
 
 **实现的功能：**
+
 - 桌面通知服务 (`NotificationService`)
 - 消息存储服务 (`MessageStorageService`)
 - 统一推送管理器 (`PushManager`)
@@ -33,6 +36,7 @@
 - 渲染进程 API 暴露
 
 **技术特性：**
+
 - 桌面通知：优先级队列、并发限制、用户交互处理
 - 消息存储：离线消息、过期清理、持久化存储
 - 统一管理：通过 PushManager 协调所有推送功能
@@ -86,40 +90,41 @@ easychat-front/src/main/
 
 ```typescript
 // 推送服务控制
-'push:start'              // 启动推送服务
-'push:stop'               // 停止推送服务
-'push:getStatus'          // 获取服务状态
-'push:setUserId'          // 设置用户ID
+'push:start' // 启动推送服务
+'push:stop' // 停止推送服务
+'push:getStatus' // 获取服务状态
+'push:setUserId' // 设置用户ID
 
 // 消息和通知
-'push:showNotification'   // 手动显示通知
-'push:getRecentMessages'  // 获取最近消息
+'push:showNotification' // 手动显示通知
+'push:getRecentMessages' // 获取最近消息
 'push:clearNotifications' // 清除所有通知
-'push:clearMessages'      // 清除所有消息
+'push:clearMessages' // 清除所有消息
 ```
 
 ### 渲染进程 API
 
 ```typescript
 // 通过 window.electronAPI.push 访问
-push.start()                    // 启动推送服务
-push.stop()                     // 停止推送服务
-push.getStatus()                // 获取状态
-push.setUserId(userId)          // 设置用户ID
-push.showNotification(message)  // 显示通知
-push.getRecentMessages(limit)   // 获取消息
-push.clearNotifications()       // 清除通知
-push.clearMessages()            // 清除消息
+push.start() // 启动推送服务
+push.stop() // 停止推送服务
+push.getStatus() // 获取状态
+push.setUserId(userId) // 设置用户ID
+push.showNotification(message) // 显示通知
+push.getRecentMessages(limit) // 获取消息
+push.clearNotifications() // 清除通知
+push.clearMessages() // 清除消息
 
 // 事件监听
-push.onNotificationShown(callback)      // 通知显示事件
-push.onNotificationClicked(callback)    // 通知点击事件
+push.onNotificationShown(callback) // 通知显示事件
+push.onNotificationClicked(callback) // 通知点击事件
 push.onConnectionStateChanged(callback) // 连接状态变更
 ```
 
 ## 配置选项
 
 ### WebSocket 配置
+
 ```typescript
 {
   url: string                    // WebSocket 服务器地址
@@ -132,6 +137,7 @@ push.onConnectionStateChanged(callback) // 连接状态变更
 ```
 
 ### 通知配置
+
 ```typescript
 {
   maxConcurrent?: number    // 最大并发通知数 (默认: 3)
@@ -142,6 +148,7 @@ push.onConnectionStateChanged(callback) // 连接状态变更
 ```
 
 ### 存储配置
+
 ```typescript
 {
   maxMessages?: number  // 最大消息数量 (默认: 1000)
@@ -153,13 +160,14 @@ push.onConnectionStateChanged(callback) // 连接状态变更
 ## 使用示例
 
 ### 基本使用
+
 ```typescript
 // 在主进程中
 const pushManager = new PushManager({
   websocket: {
     url: 'wss://your-server.com/ws',
-    token: 'your-auth-token'
-  }
+    token: 'your-auth-token',
+  },
 })
 
 await pushManager.initialize()
@@ -167,12 +175,13 @@ await pushManager.start()
 ```
 
 ### 在渲染进程中
+
 ```typescript
 // 启动推送服务
 await window.electronAPI.push.start()
 
 // 监听通知事件
-window.electronAPI.push.onNotificationClicked((data) => {
+window.electronAPI.push.onNotificationClicked(data => {
   console.log('通知被点击:', data)
 })
 

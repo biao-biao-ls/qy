@@ -1,10 +1,13 @@
 # 开发者工具修复总结
 
 ## 问题描述
+
 用户反馈 F12 无法打开开发者调试控制台。
 
 ## 问题分析
+
 通过分析代码发现以下问题：
+
 1. **环境限制**: 开发者工具快捷键只在开发环境 (`is.dev`) 中启用
 2. **快捷键处理**: 缺少 `event.preventDefault()` 可能导致快捷键冲突
 3. **打开模式**: 开发者工具默认以内嵌模式打开，可能影响用户体验
@@ -12,7 +15,9 @@
 ## 修复方案
 
 ### 1. 移除环境限制
+
 **修改前**:
+
 ```typescript
 // 在开发环境中设置开发者工具快捷键
 if (is.dev) {
@@ -24,6 +29,7 @@ if (is.dev) {
 ```
 
 **修改后**:
+
 ```typescript
 // 设置开发者工具快捷键（在所有环境中都可用）
 // 注册 F12 快捷键打开开发者工具
@@ -33,7 +39,9 @@ window.webContents.on('before-input-event', (event, input) => {
 ```
 
 ### 2. 改进快捷键处理
+
 **修改前**:
+
 ```typescript
 if (input.key === 'F12') {
   if (window.webContents.isDevToolsOpened()) {
@@ -45,6 +53,7 @@ if (input.key === 'F12') {
 ```
 
 **修改后**:
+
 ```typescript
 if (input.key === 'F12') {
   event.preventDefault() // 防止快捷键冲突
@@ -57,9 +66,11 @@ if (input.key === 'F12') {
 ```
 
 ### 3. 优化 IPC 处理器
+
 **修改前**:
+
 ```typescript
-ipcMain.handle('dev:openDevTools', (event) => {
+ipcMain.handle('dev:openDevTools', event => {
   const webContents = event.sender
   webContents.openDevTools()
   return { success: true }
@@ -67,8 +78,9 @@ ipcMain.handle('dev:openDevTools', (event) => {
 ```
 
 **修改后**:
+
 ```typescript
-ipcMain.handle('dev:openDevTools', (event) => {
+ipcMain.handle('dev:openDevTools', event => {
   const webContents = event.sender
   webContents.openDevTools({ mode: 'detach' }) // 以分离模式打开
   return { success: true }
@@ -98,6 +110,7 @@ ipcMain.handle('dev:openDevTools', (event) => {
 ### 渲染进程组件 (`src/renderer/src/components/DevTools.tsx`)
 
 现有的开发者工具组件已经提供了完整的功能：
+
 - 可视化控制界面
 - 状态显示
 - 快捷键提示
@@ -107,23 +120,27 @@ ipcMain.handle('dev:openDevTools', (event) => {
 ## 支持的快捷键
 
 ### 全局快捷键（在所有窗口中生效）
+
 - **F12** - 切换开发者工具
-- **Ctrl+Shift+I** (Windows/Linux) - 切换开发者工具  
+- **Ctrl+Shift+I** (Windows/Linux) - 切换开发者工具
 - **Cmd+Option+I** (macOS) - 切换开发者工具
 
 ### 渲染进程快捷键（在网页内容中生效）
+
 - 通过 DevTools 组件提供的键盘事件处理
 - 与全局快捷键保持一致
 
 ## IPC 接口
 
 ### 开发者工具控制
+
 - `dev:toggleDevTools` - 切换开发者工具状态
 - `dev:openDevTools` - 打开开发者工具
 - `dev:closeDevTools` - 关闭开发者工具
 - `dev:isDevToolsOpened` - 检查开发者工具是否已打开
 
 ### 返回格式
+
 ```typescript
 // 切换操作
 {
@@ -145,11 +162,13 @@ ipcMain.handle('dev:openDevTools', (event) => {
 ## 测试验证
 
 ### 测试结果
+
 ✅ **开发者工具快捷键已注册** - F12 和 Ctrl+Shift+I 快捷键成功注册  
 ✅ **应用程序启动成功** - 应用程序正常启动并运行  
 ✅ **功能正常** - 开发者工具可以正常打开和关闭
 
 ### 测试方法
+
 1. **快捷键测试**
    - 按 F12 键应该能打开/关闭开发者工具
    - 按 Ctrl+Shift+I (或 Cmd+Option+I) 应该能打开/关闭开发者工具
@@ -165,16 +184,19 @@ ipcMain.handle('dev:openDevTools', (event) => {
 ## 注意事项
 
 ### 安全考虑
+
 - 开发者工具在生产环境中也可用，这是有意的设计
 - 用户可以通过开发者工具调试和检查应用程序
 - 如果需要在生产环境中禁用，可以通过配置控制
 
 ### 用户体验
+
 - 分离模式提供更好的调试体验
 - 快捷键与浏览器保持一致
 - 提供可视化控制界面作为备选方案
 
 ### 兼容性
+
 - 支持所有主流操作系统 (Windows, macOS, Linux)
 - 兼容不同的键盘布局
 - 支持触摸屏设备的替代操作方式
@@ -191,6 +213,7 @@ ipcMain.handle('dev:openDevTools', (event) => {
 6. **✅ 提供了可视化控制组件**
 
 现在用户可以通过以下方式打开开发者工具：
+
 - 按 F12 键
 - 按 Ctrl+Shift+I (Windows/Linux) 或 Cmd+Option+I (macOS)
 - 使用 DevTools 组件的按钮
